@@ -14,6 +14,7 @@
         var game = new Phaser.Game(960, 540, Phaser.AUTO, '', { preload: preload, create: create, update: update});
 
         var BUBBLE_SIZE = 48,
+            BIG_BUBBLE_SIZE = 96,
             BUBBLE_SPACING = 4,
             BUBBLE_SIZE_SPACED = BUBBLE_SIZE + BUBBLE_SPACING,
             canClick,
@@ -35,14 +36,18 @@
             gameOver = false,
             bubbles,
             comets,
-            cometId;
+            asteroids;
 
         function preload () {
             game.load.spritesheet('BUBBLES', 'bubble_strip.png', BUBBLE_SIZE, BUBBLE_SIZE);
+            game.load.spritesheet('BIG_BUBBLES', 'bigBubble_strip.png', BIG_BUBBLE_SIZE, BIG_BUBBLE_SIZE);
+            game.load.spritesheet('ASTEROID', 'asteroid_animation.png', 158, 386);
+            game.load.spritesheet('ASTEROID_EXPLOSION', 'asteroidExplosion_animation.png', 260, 260);
             game.load.image('COMET_LEFT', 'sprite2.png');
             game.load.image('COMET_RIGHT', 'sprite5.png');
-            game.load.image('COMET_UP', 'sprite4.png');
-            game.load.image('COMET_DOWN', 'sprite6.png');
+            game.load.image('COMET_UP', 'sprite6.png');
+            game.load.image('COMET_DOWN', 'sprite4.png');
+            game.load.image('COMET_PARTICLE', 'cloud3.png');
             game.load.image('BACKGROUND', 'stars3.png');
             game.load.image('STAGE_PROP', 'back.png');
         }
@@ -59,10 +64,15 @@
             comets = game.add.group();
             comets.enableBody = true;
             comets.physicsBodyType = Phaser.Physics.ARCADE;
+
+            asteroids = game.add.group();
+            asteroids.enableBody = true;
+            asteroids.physicsBodyType = Phaser.Physics.ARCADE;
         }
 
         function update() {
-          game.physics.arcade.overlap(comets, bubbles, collisionHandler, null, this);
+          game.physics.arcade.overlap(comets, bubbles, cometCollisionHandler, null, this);
+          game.physics.arcade.overlap(asteroids, bubbles, asteroidCollisionHandler, null, this);
 
           if (move == 1) {
             if (firstSelectedBubble.x < secondSelectionX) {firstSelectedBubble.x += 4;};
@@ -77,6 +87,8 @@
               canClick = true;
               setBubblePos(firstSelectedBubble, firstSelectedBubble.x, firstSelectedBubble.y);
               setBubblePos(secondSelectedBubble, secondSelectedBubble.x, secondSelectedBubble.y);
+              firstSelectedBubble.moving = false;
+              secondSelectedBubble.moving = false;
               firstSelectedBubble = null;
               secondSelectedBubble = null;
               firstSelectionX = 0;
@@ -130,6 +142,17 @@
           bubble.inputEnabled = true;
           bubble.scale.setTo(0.1, 0.1);
           bubble.spawnWild = false;
+          bubble.moving = false;
+          bubble.matched = function () {
+            if (this.spawnWild != true) {
+              createBubble(this.x, this.y, game.rnd.integerInRange(0, 7));
+            }
+            else {
+              createBubble(this.x, this.y, 8);
+            }
+            this.destroy();
+            game.time.events.add(Phaser.Timer.SECOND * 0.4, checkBubbles, this)
+          };
           bubble.events.onInputDown.add(selectBubble, this);
           bubble.events.onInputUp.add(releaseBubble, this);
 
@@ -139,9 +162,37 @@
           return bubble;
         }
 
+        function createBigBubble(x, y, frame) {
+          var bubble = bubbles.create(x, y, "BIG_BUBBLES", frame);
+          bubble.name = 'bubble' + x.toString() + 'x' + y.toString();
+          bubble.id = calcBubbleId(x, y);
+          bubble.anchor.set(0.5);
+          bubble.inputEnabled = true;
+          bubble.scale.setTo(0.1, 0.1);
+          bubble.spawnWild = false;
+          bubble.moving = false;
+          bubble.matched = function () {
+            if (this.spawnWild != true) {
+              createBubble(this.x, this.y, game.rnd.integerInRange(0, 7));
+            }
+            else {
+              createBubble(this.x, this.y, 8);
+            }
+            this.destroy();
+            game.time.events.add(Phaser.Timer.SECOND * 0.4, checkBubbles, this)
+          };
+          //bubble.events.onInputDown.add(selectBubble, this);
+          //bubble.events.onInputUp.add(releaseBubble, this);
+
+          s = game.add.tween(bubble.scale).to({ x:1, y:1 } , 500, Phaser.Easing.Linear.None);
+          s.start();
+
+          return bubble;
+        }
+
         function setBubblePos(bubble, posX, posY) {
-          bubble.posX = posX;
-          bubble.posY = posY;
+          bubble.x = posX;
+          bubble.y = posY;
           bubble.id = calcBubbleId(posX, posY);
         }
 
@@ -165,7 +216,7 @@
           if (canClick) {
             var deg = game.math.radToDeg(game.math.angleBetween(selectedBubble.x, selectedBubble.y, pointer.worldX, pointer.worldY));
             var len = game.math.distance(selectedBubble.x, selectedBubble.y, pointer.worldX, pointer.worldY);
-            console.log(deg);
+
             if (deg < -67.5 && deg > -112.5 && len > 26) {
               initiateMove(firstSelectedBubble.x, firstSelectedBubble.y - BUBBLE_SIZE_SPACED);
             }
@@ -227,6 +278,8 @@
             secondSelectionY = secondSelectedBubble.y;
 
             move = 1;
+            firstSelectedBubble.moving = true;
+            secondSelectedBubble.moving = true;
           }
         }
 
@@ -309,6 +362,26 @@
                 ],
               ];
 
+              if (checkBubble[0][0] != null && checkBubble[1][4] != null && checkBubble[0][1] != null && checkBubble[1][5] != null) {
+                var bColor = [
+                  checkBubble[0][0].frame,
+                  checkBubble[0][1].frame,
+                  checkBubble[1][4].frame,
+                  checkBubble[1][5].frame
+                ];
+
+                matched = checkBubbleColor(bColor);
+
+                if (matched == true) {
+                  createBigBubble(checkBubble[0][0].x + 26, checkBubble[0][0].y + 26, checkBubble[0][0].frame);
+
+                  checkBubble[0][0].destroy();
+                  checkBubble[0][1].destroy();
+                  checkBubble[1][4].destroy();
+                  checkBubble[1][5].destroy();
+                }
+              }
+
               /////////////////////////
               //
               //   v origin
@@ -340,20 +413,22 @@
 
                if (matched == true) {
 
-                 comet_left = comets.create(800, checkBubble[0][0].y, "COMET_LEFT");
-                 comet_left.offsetX = 29;
-                 comet_left.offsetY = 50;
-                 comet_left.velocity.x = -300;
+                 createComet("left", null, checkBubble[0][0].y);
+                 createComet("right", null, checkBubble[0][0].y);
+                 createComet("up", checkBubble[2][4].x, null);
+                 createComet("down", checkBubble[2][4].x, null);
 
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[1][4]);
-                 destroyBubble(checkBubble[2][4]);
-                 destroyBubble(checkBubble[3][4]);
-                 destroyBubble(checkBubble[4][4]);
-                 destroyBubble(checkBubble[2][2]);
-                 destroyBubble(checkBubble[2][3]);
-                 destroyBubble(checkBubble[2][5]);
-                 destroyBubble(checkBubble[2][6]);
+                 createAsteroid(checkBubble[2][4].x, checkBubble[2][4].y);
+
+                 checkBubble[0][0].matched();
+                 checkBubble[1][4].matched();
+                 checkBubble[2][4].matched();
+                 checkBubble[3][4].matched();
+                 checkBubble[4][4].matched();
+                 checkBubble[2][2].matched();
+                 checkBubble[2][3].matched();
+                 checkBubble[2][5].matched();
+                 checkBubble[2][6].matched();
 
 
 
@@ -382,11 +457,24 @@
                matched = checkBubbleColor(bColor);
 
                if (matched == true) {
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[1][4]);
-                 destroyBubble(checkBubble[2][4]);
-                 destroyBubble(checkBubble[2][5]);
-                 destroyBubble(checkBubble[2][3]);
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[2][4].x, null);
+                 } else {
+                   createComet("down", checkBubble[2][4].x, null);
+                 }
+                 cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("left", null, checkBubble[0][0].y);
+                 } else {
+                   createComet("right", null, checkBubble[0][0].y);
+                 }
+
+                 checkBubble[0][0].matched();
+                 checkBubble[1][4].matched();
+                 checkBubble[2][4].matched();
+                 checkBubble[2][5].matched();
+                 checkBubble[2][3].matched();
                  return;
                }
              }
@@ -412,11 +500,24 @@
                matched = checkBubbleColor(bColor);
 
                if (matched == true) {
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[0][1]);
-                 destroyBubble(checkBubble[0][2]);
-                 destroyBubble(checkBubble[1][5]);
-                 destroyBubble(checkBubble[2][5]);
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[0][0].x, null);
+                 } else {
+                   createComet("down", checkBubble[0][0].x, null);
+                 }
+                 cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("left", null, checkBubble[0][1].y);
+                 } else {
+                   createComet("right", null, checkBubble[0][1].y);
+                 }
+
+                 checkBubble[0][0].matched();
+                 checkBubble[0][1].matched();
+                 checkBubble[0][2].matched();
+                 checkBubble[1][5].matched();
+                 checkBubble[2][5].matched();
                  return;
                }
              }
@@ -442,11 +543,24 @@
                matched = checkBubbleColor(bColor);
 
                if (matched == true) {
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[1][4]);
-                 destroyBubble(checkBubble[2][4]);
-                 destroyBubble(checkBubble[1][3]);
-                 destroyBubble(checkBubble[1][2]);
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[1][4].x, null);
+                 } else {
+                   createComet("down", checkBubble[1][4].x, null);
+                 }
+                 cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("left", null, checkBubble[0][0].y);
+                 } else {
+                   createComet("right", null, checkBubble[0][0].y);
+                 }
+
+                 checkBubble[0][0].matched();
+                 checkBubble[1][4].matched();
+                 checkBubble[2][4].matched();
+                 checkBubble[1][3].matched();
+                 checkBubble[1][2].matched();
                  return;
                }
              }
@@ -472,11 +586,24 @@
                matched = checkBubbleColor(bColor);
 
                if (matched == true) {
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[1][4]);
-                 destroyBubble(checkBubble[2][4]);
-                 destroyBubble(checkBubble[2][3]);
-                 destroyBubble(checkBubble[2][2]);
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[2][4].x, null);
+                 } else {
+                   createComet("down", checkBubble[2][4].x, null);
+                 }
+                 cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("left", null, checkBubble[0][0].y);
+                 } else {
+                   createComet("right", null, checkBubble[0][0].y);
+                 }
+
+                 checkBubble[0][0].matched();
+                 checkBubble[1][4].matched();
+                 checkBubble[2][4].matched();
+                 checkBubble[2][3].matched();
+                 checkBubble[2][2].matched();
                  return;
                }
              }
@@ -502,11 +629,24 @@
                matched = checkBubbleColor(bColor);
 
                if (matched == true) {
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[0][1]);
-                 destroyBubble(checkBubble[0][2]);
-                 destroyBubble(checkBubble[1][6]);
-                 destroyBubble(checkBubble[2][6]);
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[0][0].x, null);
+                 } else {
+                   createComet("down", checkBubble[0][0].x, null);
+                 }
+                 cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("left", null, checkBubble[0][2].y);
+                 } else {
+                   createComet("right", null, checkBubble[0][2].y);
+                 }
+
+                 checkBubble[0][0].matched();
+                 checkBubble[0][1].matched();
+                 checkBubble[0][2].matched();
+                 checkBubble[1][6].matched();
+                 checkBubble[2][6].matched();
                  return;
                }
              }
@@ -532,11 +672,24 @@
                matched = checkBubbleColor(bColor);
 
                if (matched == true) {
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[1][4]);
-                 destroyBubble(checkBubble[2][4]);
-                 destroyBubble(checkBubble[1][5]);
-                 destroyBubble(checkBubble[1][6]);
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[1][4].x, null);
+                 } else {
+                   createComet("down", checkBubble[1][4].x, null);
+                 }
+                 cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("left", null, checkBubble[0][0].y);
+                 } else {
+                   createComet("right", null, checkBubble[0][0].y);
+                 }
+
+                 checkBubble[0][0].matched();
+                 checkBubble[1][4].matched();
+                 checkBubble[2][4].matched();
+                 checkBubble[1][5].matched();
+                 checkBubble[1][6].matched();
                  return;
                }
              }
@@ -562,11 +715,24 @@
                matched = checkBubbleColor(bColor);
 
                if (matched == true) {
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[1][4]);
-                 destroyBubble(checkBubble[2][4]);
-                 destroyBubble(checkBubble[2][5]);
-                 destroyBubble(checkBubble[2][6]);
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[2][4].x, null);
+                 } else {
+                   createComet("down", checkBubble[2][4].x, null);
+                 }
+                 cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("left", null, checkBubble[0][0].y);
+                 } else {
+                   createComet("right", null, checkBubble[0][0].y);
+                 }
+
+                 checkBubble[0][0].matched();
+                 checkBubble[1][4].matched();
+                 checkBubble[2][4].matched();
+                 checkBubble[2][5].matched();
+                 checkBubble[2][6].matched();
                  return;
                }
              }
@@ -592,11 +758,24 @@
                matched = checkBubbleColor(bColor);
 
                if (matched == true) {
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[0][1]);
-                 destroyBubble(checkBubble[0][2]);
-                 destroyBubble(checkBubble[1][4]);
-                 destroyBubble(checkBubble[2][4]);
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[0][0].x, null);
+                 } else {
+                   createComet("down", checkBubble[0][0].x, null);
+                 }
+                 cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("left", null, checkBubble[0][0].y);
+                 } else {
+                   createComet("right", null, checkBubble[0][0].y);
+                 }
+
+                 checkBubble[0][0].matched();
+                 checkBubble[0][1].matched();
+                 checkBubble[0][2].matched();
+                 checkBubble[1][4].matched();
+                 checkBubble[2][4].matched();
                  return;
                }
              }
@@ -625,11 +804,12 @@
 
                if (matched == true) {
                  checkBubble[0][2].spawnWild = true;
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[0][1]);
-                 destroyBubble(checkBubble[0][2]);
-                 destroyBubble(checkBubble[0][3]);
-                 destroyBubble(checkBubble[0][4]);
+
+                 checkBubble[0][0].matched();
+                 checkBubble[0][1].matched();
+                 checkBubble[0][2].matched();
+                 checkBubble[0][3].matched();
+                 checkBubble[0][4].matched();
                  return;
                }
              }
@@ -655,10 +835,16 @@
                matched = checkBubbleColor(bColor);
 
                if (matched == true) {
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[0][1]);
-                 destroyBubble(checkBubble[0][2]);
-                 destroyBubble(checkBubble[0][3]);
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[0][0].x, null);
+                 } else {
+                   createComet("down", checkBubble[0][0].x, null);
+                 }
+                 checkBubble[0][0].matched();
+                 checkBubble[0][1].matched();
+                 checkBubble[0][2].matched();
+                 checkBubble[0][3].matched();
                  return;
                }
              }
@@ -682,9 +868,10 @@
                matched = checkBubbleColor(bColor);
 
                if (matched == true) {
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[0][1]);
-                 destroyBubble(checkBubble[0][2]);
+
+                 checkBubble[0][0].matched();
+                 checkBubble[0][1].matched();
+                 checkBubble[0][2].matched();
                  return;
                }
              }
@@ -709,11 +896,12 @@
 
                if (matched == true) {
                  checkBubble[2][4].spawnWild = true;
-                 destroyBubble(checkBubble[0][0]);
-                 destroyBubble(checkBubble[1][4]);
-                 destroyBubble(checkBubble[2][4]);
-                 destroyBubble(checkBubble[3][4]);
-                 destroyBubble(checkBubble[4][4]);
+
+                 checkBubble[0][0].matched();
+                 checkBubble[1][4].matched();
+                 checkBubble[2][4].matched();
+                 checkBubble[3][4].matched();
+                 checkBubble[4][4].matched();
                  return;
                }
              }
@@ -736,10 +924,17 @@
                 matched = checkBubbleColor(bColor);
 
                 if (matched == true) {
-                  destroyBubble(checkBubble[0][0]);
-                  destroyBubble(checkBubble[1][4]);
-                  destroyBubble(checkBubble[2][4]);
-                  destroyBubble(checkBubble[3][4]);
+                  var cometDir = Math.random();
+                  if (cometDir > 0.5) {
+                    createComet("left", null, checkBubble[0][0].y);
+                  } else {
+                    createComet("right", null, checkBubble[0][0].y);
+                  }
+
+                  checkBubble[0][0].matched();
+                  checkBubble[1][4].matched();
+                  checkBubble[2][4].matched();
+                  checkBubble[3][4].matched();
                   return;
                 }
               }
@@ -761,15 +956,9 @@
                 matched = checkBubbleColor(bColor);
 
                 if (matched == true) {
-                  var cometDir = Math.random();
-                  if (cometDir > 0.5) {
-                    createComet("left", null, checkBubble[0][0].y);
-                  } else {
-                    createComet("right", null, checkBubble[0][0].y);
-                  }
-                  destroyBubble(checkBubble[0][0]);
-                  destroyBubble(checkBubble[1][4]);
-                  destroyBubble(checkBubble[2][4]);
+                  checkBubble[0][0].matched();
+                  checkBubble[1][4].matched();
+                  checkBubble[2][4].matched();
                   return;
                 }
               }
@@ -790,29 +979,129 @@
         }
 
         function createComet(dir, x, y) {
-          if (dir === "left") {
-            comet_left = comets.create(940, y, "COMET_LEFT");
-            comet_left.anchor.set(0.1, 0.5);
-            comet_left.body.velocity.x = -600;
-            comet_left.body.setSize(4, 4);
-            game.time.events.add(5000, destroyComet, this, comet_left);
+          switch (dir) {
+            case "left":
+              var emitter = game.add.emitter(0, 0, 1000);
+              emitter.makeParticles('COMET_PARTICLE');
+              comet_left = comets.create(940, y, "COMET_LEFT");
+              comet_left.anchor.set(0.1, 0.5);
+              comet_left.body.velocity.x = -500;
+              comet_left.body.setSize(4, 4);
+              comet_left.scale.setTo(0.75);
+              comet_left.addChild(emitter);
+              emitter.gravity = 0;
+              emitter.y = 0;
+              emitter.x = 40;
+              emitter.minParticleScale = 0.3;
+              emitter.maxParticleScale = 0.4;
+              emitter.minParticleAlpha = 0.2;
+              emitter.maxParticleAlpha = 0.5;
+              emitter.minParticleSpeed.set(400, -35);
+              emitter.maxParticleSpeed.set(300, 35);
+              emitter.forEach(function(particle) {
+                particle.tint = 0x7FFFD4;
+              });
+              emitter.start(false, 1000, 25);
+              game.time.events.add(3000, destroyComet, this, comet_left);
+              break;
+            case "right":
+              var emitter = game.add.emitter(0, 0, 1000);
+              emitter.makeParticles('COMET_PARTICLE');
+              comet_right = comets.create(10, y, "COMET_RIGHT");
+              comet_right.anchor.set(0.9, 0.5);
+              comet_right.body.velocity.x = 500;
+              comet_right.body.setSize(4, 4);
+              comet_right.scale.setTo(0.75);
+              comet_right.addChild(emitter);
+              emitter.gravity = 0;
+              emitter.y = 0;
+              emitter.x = -40;
+              emitter.minParticleScale = 0.3;
+              emitter.maxParticleScale = 0.4;
+              emitter.minParticleAlpha = 0.2;
+              emitter.maxParticleAlpha = 0.5;
+              emitter.minParticleSpeed.set(-400, -35);
+              emitter.maxParticleSpeed.set(-300, 35);
+              emitter.forEach(function(particle) {
+                particle.tint = 0x7FFFD4;
+              });
+              emitter.start(false, 1000, 25);
+              game.time.events.add(3000, destroyComet, this, comet_right);
+              break;
+            case "up":
+              var emitter = game.add.emitter(0, 0, 1000);
+              emitter.makeParticles('COMET_PARTICLE');
+              comet_up = comets.create(x, 10, "COMET_UP");
+              comet_up.anchor.set(0.5, 0.9);
+              comet_up.body.velocity.y = 500;
+              comet_up.body.setSize(4, 4);
+              comet_up.scale.setTo(0.75);
+              comet_up.addChild(emitter);
+              emitter.gravity = 0;
+              emitter.y = -40;
+              emitter.x = 0;
+              emitter.minParticleScale = 0.3;
+              emitter.maxParticleScale = 0.4;
+              emitter.minParticleAlpha = 0.2;
+              emitter.maxParticleAlpha = 0.5;
+              emitter.minParticleSpeed.set(-35, -400);
+              emitter.maxParticleSpeed.set(35, -300);
+              emitter.forEach(function(particle) {
+                particle.tint = 0x7FFFD4;
+              });
+              emitter.start(false, 1000, 25);
+              game.time.events.add(3000, destroyComet, this, comet_up);
+              break;
+            case "down":
+              var emitter = game.add.emitter(0, 0, 1000);
+              emitter.makeParticles('COMET_PARTICLE');
+              comet_down = comets.create(x, 530, "COMET_DOWN");
+              comet_down.anchor.set(0.5, 0.1);
+              comet_down.body.velocity.y = -500;
+              comet_down.body.setSize(4, 4);
+              comet_down.scale.setTo(0.75);
+              comet_down.addChild(emitter);
+              emitter.gravity = 0;
+              emitter.y = 40;
+              emitter.x = 0;
+              emitter.minParticleScale = 0.3;
+              emitter.maxParticleScale = 0.4;
+              emitter.minParticleAlpha = 0.2;
+              emitter.maxParticleAlpha = 0.5;
+              emitter.minParticleSpeed.set(-35, 400);
+              emitter.maxParticleSpeed.set(35, 300);
+              emitter.forEach(function(particle) {
+                particle.tint = 0x7FFFD4;
+              });
+              emitter.start(false, 1000, 25);
+              game.time.events.add(3000, destroyComet, this, comet_down);
+              break;
           }
-          if (dir === "right") {
-            comet_right = comets.create(-50, y, "COMET_RIGHT");
-            comet_right.anchor.set(0.9, 0.5);
-            comet_right.body.velocity.x = 600;
-            comet_right.body.setSize(4, 4);
-            game.time.events.add(5000, destroyComet, this, comet_right);
-          }
+        }
+
+        function createAsteroid(x, targetY) {
+          asteroid = asteroids.create(x, 10, "ASTEROID");
+          asteroid.anchor.set(0.5, 0.62);
+          asteroid.frame = 0;
+          asteroid.body.velocity.y = 300;
+          asteroid.body.setSize(4, 4);
+          asteroid.targetY = targetY;
         }
 
         function destroyComet(comet) {
           comet.destroy();
         }
 
-        function collisionHandler(comet, bubble) {
+        function cometCollisionHandler(comet, bubble) {
+          if (bubble.moving == false) {
+            destroyBubble(bubble);
+          }
+        }
 
-          destroyBubble(bubble);
+        function asteroidCollisionHandler(asteroid, bubble) {
+          if (bubble.y == asteroid.targetY) {
+            asteroid.destroy();
+          }
         }
 
     };
