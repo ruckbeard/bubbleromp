@@ -802,10 +802,10 @@
             comet_right.anchor.set(0.9, 0.5);
             comet_right.body.velocity.x = 600;
             comet_right.body.setSize(4, 4);
-            game.time.events.add(5000, destroyComet, this, comet_ri);
+            game.time.events.add(5000, destroyComet, this, comet_right);
           }
         }
-        
+
         function destroyComet(comet) {
           comet.destroy();
         }
