@@ -201,6 +201,7 @@
         }
 
         function releaseBubble(selectedBubble, pointer) {
+          console.log(selectedBubble.id);
           if (canClick) {
             var deg = game.math.radToDeg(game.math.angleBetween(selectedBubble.x, selectedBubble.y, pointer.worldX, pointer.worldY));
             var len = game.math.distance(selectedBubble.x, selectedBubble.y, pointer.worldX, pointer.worldY);
@@ -240,11 +241,17 @@
         }
 
         function destroyBubble(bubble) {
-          if (bubble.spawnWild != true) {
-            createBubble(bubble.x, bubble.y, game.rnd.integerInRange(0, 7));
+          if (bubble.spawnWild == true) {
+            game.time.events.add(100, createBubble, this, bubble.x, bubble.y, 8);
+          }
+          else if (bubble.big == true) {
+            game.time.events.add(100, createBubble, this, bubble.x - 26, bubble.y - 26, game.rnd.integerInRange(0, 7));
+            game.time.events.add(100, createBubble, this, bubble.x + 26, bubble.y - 26, game.rnd.integerInRange(0, 7));
+            game.time.events.add(100, createBubble, this, bubble.x - 26, bubble.y + 26, game.rnd.integerInRange(0, 7));
+            game.time.events.add(100, createBubble, this, bubble.x + 26, bubble.y + 26, game.rnd.integerInRange(0, 7));
           }
           else {
-            createBubble(bubble.x, bubble.y, 8);
+            game.time.events.add(100, createBubble, this, bubble.x, bubble.y, game.rnd.integerInRange(0, 7));
           }
           bubble.destroy();
           game.time.events.add(Phaser.Timer.SECOND * 0.4, checkBubbles, this)
@@ -281,14 +288,14 @@
                 bubble on the board and stores adjecant bubbles in an array. The
                 pattern is much like a 5x5 grid. Visually looks like this:
 
-                                              
+
                                               * * * *
                                               * * * *
                 bubble starting the check-> * * * * *
                                             * * * * *
                                             * * * * *
-                                            * 
-                                            * 
+                                            *
+                                            *
 
                 You can then use this array to check for patterns by getting the
                 frame of the bubbles in the order and pattern you want them to be
@@ -306,44 +313,44 @@
                 [
                   //getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 4),
                   //getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 3),
-                  getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 2),
-                  getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED),
-                  getBubble(xx + BUBBLE_SIZE_SPACED, yy),
-                  getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED),
-                  getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 2),
+                  xx == BOARD_COLS[8] ? null : getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 2),
+                  xx == BOARD_COLS[8] ? null : getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED),
+                  xx == BOARD_COLS[8] ? null : getBubble(xx + BUBBLE_SIZE_SPACED, yy),
+                  xx == BOARD_COLS[8] ? null : getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED),
+                  xx == BOARD_COLS[8] ? null : getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 2),
                   //getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 3),
                   //getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 4)
                 ],
                 [
                   //getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 4),
                   //getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 3),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 2),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 2),
+                  xx >= BOARD_COLS[7] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 2),
+                  xx >= BOARD_COLS[7] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED),
+                  xx >= BOARD_COLS[7] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy),
+                  xx >= BOARD_COLS[7] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED),
+                  xx >= BOARD_COLS[7] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 2),
                   //getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 3),
                   //getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 4)
                 ],
                 [
                   //getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 4),
                   //getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 3),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 2),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 2),
+                  xx >= BOARD_COLS[6] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 2),
+                  xx >= BOARD_COLS[6] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED),
+                  xx >= BOARD_COLS[6] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy),
+                  xx >= BOARD_COLS[6] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED),
+                  xx >= BOARD_COLS[6] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 2),
                   //getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 3),
                   //getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 4)
                 ],
                 [
                   //getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 4),
                   //getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 3),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 2),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 2),
+                  xx >= BOARD_COLS[5] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 2),
+                  xx >= BOARD_COLS[5] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED),
+                  xx >= BOARD_COLS[5] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy),
+                  xx >= BOARD_COLS[5] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED),
+                  xx >= BOARD_COLS[5] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 2),
                   //getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 3),
                   //getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 4)
                 ],
@@ -870,7 +877,7 @@
               //
               /////////////////////////
 
-             if (checkBubble[0][0] != null && checkBubble [1][4] != null && checkBubble[2][4] != null && checkBubble[3][2] != null && checkBubble[4][2] != null) {
+             if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[3][2] != null && checkBubble[4][2] != null) {
                var bColor = [
                  checkBubble[0][0].frame,
                  checkBubble[1][2].frame,
@@ -882,7 +889,7 @@
                matched = checkBubbleColor(bColor);
 
                if (matched == true) {
-                 checkBubble[2][4].spawnWild = true;
+                 checkBubble[2][2].spawnWild = true;
 
                  checkBubble[0][0].matched();
                  checkBubble[1][2].matched();
@@ -900,7 +907,7 @@
                //
                /////////////////////////
 
-              if (checkBubble[0][0] != null && checkBubble [1][4] != null && checkBubble[2][2] != null && checkBubble[3][2] != null) {
+              if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[3][2] != null) {
                 var bColor = [
                   checkBubble[0][0].frame,
                   checkBubble[1][2].frame,
