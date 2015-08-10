@@ -279,17 +279,16 @@
                 This function could probably be implemented better. This is the
                 best soloution I came up with. This function loops through every
                 bubble on the board and stores adjecant bubbles in an array. The
-                pattern is much like a 5x9 grid. Visually looks like this:
+                pattern is much like a 5x5 grid. Visually looks like this:
 
-                                              * * * *
-                                              * * * *
+                                              
                                               * * * *
                                               * * * *
                 bubble starting the check-> * * * * *
                                             * * * * *
                                             * * * * *
-                                            * * * * *
-                                            * * * * *
+                                            * 
+                                            * 
 
                 You can then use this array to check for patterns by getting the
                 frame of the bubbles in the order and pattern you want them to be
@@ -305,57 +304,57 @@
                   getBubble(xx, yy + BUBBLE_SIZE_SPACED * 4)
                 ],
                 [
-                  getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 4),
-                  getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 3),
+                  //getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 4),
+                  //getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 3),
                   getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 2),
                   getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED),
                   getBubble(xx + BUBBLE_SIZE_SPACED, yy),
                   getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED),
                   getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 2),
-                  getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 3),
-                  getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 4)
+                  //getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 3),
+                  //getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 4)
                 ],
                 [
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 4),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 3),
+                  //getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 4),
+                  //getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 3),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 2),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 2),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 3),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 4)
+                  //getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 3),
+                  //getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 4)
                 ],
                 [
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 4),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 3),
+                  //getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 4),
+                  //getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 3),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 2),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 2),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 3),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 4)
+                  //getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 3),
+                  //getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 4)
                 ],
                 [
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 4),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 3),
+                  //getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 4),
+                  //getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 3),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 2),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED),
                   getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 2),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 3),
-                  getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 4)
+                  //getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 3),
+                  //getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 4)
                 ],
               ];
 
-              if (checkBubble[0][0] != null && checkBubble[1][4] != null && checkBubble[0][1] != null && checkBubble[1][5] != null) {
+              if (checkBubble[0][0] != null && checkBubble[1][2] != null && checkBubble[0][1] != null && checkBubble[1][3] != null) {
                 var bColor = [
                   checkBubble[0][0].frame,
                   checkBubble[0][1].frame,
-                  checkBubble[1][4].frame,
-                  checkBubble[1][5].frame
+                  checkBubble[1][2].frame,
+                  checkBubble[1][3].frame
                 ];
 
                 matched = checkBubbleColor(bColor);
@@ -365,8 +364,8 @@
 
                   checkBubble[0][0].destroy();
                   checkBubble[0][1].destroy();
-                  checkBubble[1][4].destroy();
-                  checkBubble[1][5].destroy();
+                  checkBubble[1][2].destroy();
+                  checkBubble[1][3].destroy();
                 }
               }
 
@@ -381,20 +380,20 @@
               //
               /////////////////////////
 
-             if (checkBubble[0][0] != null && checkBubble [1][4] != null &&
-               checkBubble[2][4] != null && checkBubble[3][4] != null &&
-               checkBubble[4][4] != null && checkBubble[2][2] != null &&
-               checkBubble[2][3] != null && checkBubble[2][5] != null && checkBubble[2][6] != null) {
+             if (checkBubble[0][0] != null && checkBubble [1][2] != null &&
+               checkBubble[2][2] != null && checkBubble[3][2] != null &&
+               checkBubble[4][2] != null && checkBubble[2][0] != null &&
+               checkBubble[2][1] != null && checkBubble[2][3] != null && checkBubble[2][4] != null) {
                var bColor = [
                  checkBubble[0][0].frame,
-                 checkBubble[1][4].frame,
-                 checkBubble[2][4].frame,
-                 checkBubble[3][4].frame,
-                 checkBubble[4][4].frame,
+                 checkBubble[1][2].frame,
                  checkBubble[2][2].frame,
+                 checkBubble[3][2].frame,
+                 checkBubble[4][2].frame,
+                 checkBubble[2][0].frame,
+                 checkBubble[2][1].frame,
                  checkBubble[2][3].frame,
-                 checkBubble[2][5].frame,
-                 checkBubble[2][6].frame
+                 checkBubble[2][4].frame
                ];
 
                matched = checkBubbleColor(bColor);
@@ -403,20 +402,20 @@
 
                  createComet("left", null, checkBubble[0][0].y);
                  createComet("right", null, checkBubble[0][0].y);
-                 createComet("up", checkBubble[2][4].x, null);
-                 createComet("down", checkBubble[2][4].x, null);
+                 createComet("up", checkBubble[2][2].x, null);
+                 createComet("down", checkBubble[2][2].x, null);
 
-                 createAsteroid(checkBubble[2][4].x, checkBubble[2][4].y);
+                 createAsteroid(checkBubble[2][2].x, checkBubble[2][2].y);
 
                  checkBubble[0][0].matched();
-                 checkBubble[1][4].matched();
-                 checkBubble[2][4].matched();
-                 checkBubble[3][4].matched();
-                 checkBubble[4][4].matched();
+                 checkBubble[1][2].matched();
                  checkBubble[2][2].matched();
+                 checkBubble[3][2].matched();
+                 checkBubble[4][2].matched();
+                 checkBubble[2][0].matched();
+                 checkBubble[2][1].matched();
                  checkBubble[2][3].matched();
-                 checkBubble[2][5].matched();
-                 checkBubble[2][6].matched();
+                 checkBubble[2][4].matched();
 
 
 
@@ -433,13 +432,13 @@
               //
               /////////////////////////
 
-             if (checkBubble[0][0] != null && checkBubble [1][4] != null && checkBubble[2][4] != null && checkBubble[2][3] != null && checkBubble[2][5] != null) {
+             if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[2][1] != null && checkBubble[2][3] != null) {
                var bColor = [
                  checkBubble[0][0].frame,
-                 checkBubble[1][4].frame,
-                 checkBubble[2][4].frame,
-                 checkBubble[2][5].frame,
-                 checkBubble[2][3].frame
+                 checkBubble[1][2].frame,
+                 checkBubble[2][2].frame,
+                 checkBubble[2][3].frame,
+                 checkBubble[2][1].frame
                ];
 
                matched = checkBubbleColor(bColor);
@@ -447,9 +446,9 @@
                if (matched == true) {
                  var cometDir = Math.random();
                  if (cometDir > 0.5) {
-                   createComet("up", checkBubble[2][4].x, null);
+                   createComet("up", checkBubble[2][2].x, null);
                  } else {
-                   createComet("down", checkBubble[2][4].x, null);
+                   createComet("down", checkBubble[2][2].x, null);
                  }
                  cometDir = Math.random();
                  if (cometDir > 0.5) {
@@ -459,10 +458,10 @@
                  }
 
                  checkBubble[0][0].matched();
-                 checkBubble[1][4].matched();
-                 checkBubble[2][4].matched();
-                 checkBubble[2][5].matched();
+                 checkBubble[1][2].matched();
+                 checkBubble[2][2].matched();
                  checkBubble[2][3].matched();
+                 checkBubble[2][1].matched();
                  return;
                }
              }
@@ -476,13 +475,13 @@
               //
               /////////////////////////
 
-             if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[1][5] != null && checkBubble[2][5] != null) {
+             if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[1][3] != null && checkBubble[2][3] != null) {
                var bColor = [
                  checkBubble[0][0].frame,
                  checkBubble[0][1].frame,
                  checkBubble[0][2].frame,
-                 checkBubble[1][5].frame,
-                 checkBubble[2][5].frame
+                 checkBubble[1][3].frame,
+                 checkBubble[2][3].frame
                ];
 
                matched = checkBubbleColor(bColor);
@@ -504,94 +503,51 @@
                  checkBubble[0][0].matched();
                  checkBubble[0][1].matched();
                  checkBubble[0][2].matched();
-                 checkBubble[1][5].matched();
-                 checkBubble[2][5].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //     *
-              //     *
-              //   * * *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [1][4] != null && checkBubble[2][4] != null && checkBubble[1][3] != null && checkBubble[1][2] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[1][4].frame,
-                 checkBubble[2][4].frame,
-                 checkBubble[1][3].frame,
-                 checkBubble[1][2].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[1][4].x, null);
-                 } else {
-                   createComet("down", checkBubble[1][4].x, null);
-                 }
-                 cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("left", null, checkBubble[0][0].y);
-                 } else {
-                   createComet("right", null, checkBubble[0][0].y);
-                 }
-
-                 checkBubble[0][0].matched();
-                 checkBubble[1][4].matched();
-                 checkBubble[2][4].matched();
                  checkBubble[1][3].matched();
-                 checkBubble[1][2].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //       *
-              //       *
-              //   * * *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [1][4] != null && checkBubble[2][4] != null && checkBubble[2][3] != null && checkBubble[2][2] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[1][4].frame,
-                 checkBubble[2][4].frame,
-                 checkBubble[2][3].frame,
-                 checkBubble[2][2].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[2][4].x, null);
-                 } else {
-                   createComet("down", checkBubble[2][4].x, null);
-                 }
-                 cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("left", null, checkBubble[0][0].y);
-                 } else {
-                   createComet("right", null, checkBubble[0][0].y);
-                 }
-
-                 checkBubble[0][0].matched();
-                 checkBubble[1][4].matched();
-                 checkBubble[2][4].matched();
                  checkBubble[2][3].matched();
+                 return;
+               }
+             }
+
+              /////////////////////////
+              //
+              //   v origin
+              //     *
+              //     *
+              //   * * *
+              //
+              /////////////////////////
+
+             if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[1][1] != null && checkBubble[1][0] != null) {
+               var bColor = [
+                 checkBubble[0][0].frame,
+                 checkBubble[1][2].frame,
+                 checkBubble[2][2].frame,
+                 checkBubble[1][1].frame,
+                 checkBubble[1][0].frame
+               ];
+
+               matched = checkBubbleColor(bColor);
+
+               if (matched == true) {
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[1][2].x, null);
+                 } else {
+                   createComet("down", checkBubble[1][2].x, null);
+                 }
+                 cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("left", null, checkBubble[0][0].y);
+                 } else {
+                   createComet("right", null, checkBubble[0][0].y);
+                 }
+
+                 checkBubble[0][0].matched();
+                 checkBubble[1][2].matched();
                  checkBubble[2][2].matched();
+                 checkBubble[1][1].matched();
+                 checkBubble[1][0].matched();
                  return;
                }
              }
@@ -599,19 +555,19 @@
               /////////////////////////
               //
               //   v origin
-              //   *
-              //   *
+              //       *
+              //       *
               //   * * *
               //
               /////////////////////////
 
-             if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[1][6] != null && checkBubble[2][6] != null) {
+             if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[2][1] != null && checkBubble[2][0] != null) {
                var bColor = [
                  checkBubble[0][0].frame,
-                 checkBubble[0][1].frame,
-                 checkBubble[0][2].frame,
-                 checkBubble[1][6].frame,
-                 checkBubble[2][6].frame
+                 checkBubble[1][2].frame,
+                 checkBubble[2][2].frame,
+                 checkBubble[2][1].frame,
+                 checkBubble[2][0].frame
                ];
 
                matched = checkBubbleColor(bColor);
@@ -619,52 +575,9 @@
                if (matched == true) {
                  var cometDir = Math.random();
                  if (cometDir > 0.5) {
-                   createComet("up", checkBubble[0][0].x, null);
+                   createComet("up", checkBubble[2][2].x, null);
                  } else {
-                   createComet("down", checkBubble[0][0].x, null);
-                 }
-                 cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("left", null, checkBubble[0][2].y);
-                 } else {
-                   createComet("right", null, checkBubble[0][2].y);
-                 }
-
-                 checkBubble[0][0].matched();
-                 checkBubble[0][1].matched();
-                 checkBubble[0][2].matched();
-                 checkBubble[1][6].matched();
-                 checkBubble[2][6].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //   * * *
-              //     *
-              //     *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [1][4] != null && checkBubble[2][4] != null && checkBubble[1][5] != null && checkBubble[1][6] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[1][4].frame,
-                 checkBubble[2][4].frame,
-                 checkBubble[1][5].frame,
-                 checkBubble[1][6].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[1][4].x, null);
-                 } else {
-                   createComet("down", checkBubble[1][4].x, null);
+                   createComet("down", checkBubble[2][2].x, null);
                  }
                  cometDir = Math.random();
                  if (cometDir > 0.5) {
@@ -674,10 +587,10 @@
                  }
 
                  checkBubble[0][0].matched();
-                 checkBubble[1][4].matched();
-                 checkBubble[2][4].matched();
-                 checkBubble[1][5].matched();
-                 checkBubble[1][6].matched();
+                 checkBubble[1][2].matched();
+                 checkBubble[2][2].matched();
+                 checkBubble[2][1].matched();
+                 checkBubble[2][0].matched();
                  return;
                }
              }
@@ -685,52 +598,9 @@
               /////////////////////////
               //
               //   v origin
-              //   * * *
-              //       *
-              //       *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [1][4] != null && checkBubble[2][4] != null && checkBubble[2][5] != null && checkBubble[2][6] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[1][4].frame,
-                 checkBubble[2][4].frame,
-                 checkBubble[2][5].frame,
-                 checkBubble[2][6].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[2][4].x, null);
-                 } else {
-                   createComet("down", checkBubble[2][4].x, null);
-                 }
-                 cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("left", null, checkBubble[0][0].y);
-                 } else {
-                   createComet("right", null, checkBubble[0][0].y);
-                 }
-
-                 checkBubble[0][0].matched();
-                 checkBubble[1][4].matched();
-                 checkBubble[2][4].matched();
-                 checkBubble[2][5].matched();
-                 checkBubble[2][6].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //   * * *
               //   *
               //   *
+              //   * * *
               //
               /////////////////////////
 
@@ -754,6 +624,135 @@
                  }
                  cometDir = Math.random();
                  if (cometDir > 0.5) {
+                   createComet("left", null, checkBubble[0][2].y);
+                 } else {
+                   createComet("right", null, checkBubble[0][2].y);
+                 }
+
+                 checkBubble[0][0].matched();
+                 checkBubble[0][1].matched();
+                 checkBubble[0][2].matched();
+                 checkBubble[1][4].matched();
+                 checkBubble[2][4].matched();
+                 return;
+               }
+             }
+
+              /////////////////////////
+              //
+              //   v origin
+              //   * * *
+              //     *
+              //     *
+              //
+              /////////////////////////
+
+             if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[1][3] != null && checkBubble[1][4] != null) {
+               var bColor = [
+                 checkBubble[0][0].frame,
+                 checkBubble[1][2].frame,
+                 checkBubble[2][2].frame,
+                 checkBubble[1][3].frame,
+                 checkBubble[1][4].frame
+               ];
+
+               matched = checkBubbleColor(bColor);
+
+               if (matched == true) {
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[1][4].x, null);
+                 } else {
+                   createComet("down", checkBubble[1][4].x, null);
+                 }
+                 cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("left", null, checkBubble[0][0].y);
+                 } else {
+                   createComet("right", null, checkBubble[0][0].y);
+                 }
+
+                 checkBubble[0][0].matched();
+                 checkBubble[1][2].matched();
+                 checkBubble[2][2].matched();
+                 checkBubble[1][3].matched();
+                 checkBubble[1][4].matched();
+                 return;
+               }
+             }
+
+              /////////////////////////
+              //
+              //   v origin
+              //   * * *
+              //       *
+              //       *
+              //
+              /////////////////////////
+
+             if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[2][3] != null && checkBubble[2][4] != null) {
+               var bColor = [
+                 checkBubble[0][0].frame,
+                 checkBubble[1][2].frame,
+                 checkBubble[2][2].frame,
+                 checkBubble[2][3].frame,
+                 checkBubble[2][4].frame
+               ];
+
+               matched = checkBubbleColor(bColor);
+
+               if (matched == true) {
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[2][2].x, null);
+                 } else {
+                   createComet("down", checkBubble[2][2].x, null);
+                 }
+                 cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("left", null, checkBubble[0][0].y);
+                 } else {
+                   createComet("right", null, checkBubble[0][0].y);
+                 }
+
+                 checkBubble[0][0].matched();
+                 checkBubble[1][2].matched();
+                 checkBubble[2][2].matched();
+                 checkBubble[2][3].matched();
+                 checkBubble[2][4].matched();
+                 return;
+               }
+             }
+
+              /////////////////////////
+              //
+              //   v origin
+              //   * * *
+              //   *
+              //   *
+              //
+              /////////////////////////
+
+             if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[1][2] != null && checkBubble[2][2] != null) {
+               var bColor = [
+                 checkBubble[0][0].frame,
+                 checkBubble[0][1].frame,
+                 checkBubble[0][2].frame,
+                 checkBubble[1][2].frame,
+                 checkBubble[2][2].frame
+               ];
+
+               matched = checkBubbleColor(bColor);
+
+               if (matched == true) {
+                 var cometDir = Math.random();
+                 if (cometDir > 0.5) {
+                   createComet("up", checkBubble[0][0].x, null);
+                 } else {
+                   createComet("down", checkBubble[0][0].x, null);
+                 }
+                 cometDir = Math.random();
+                 if (cometDir > 0.5) {
                    createComet("left", null, checkBubble[0][0].y);
                  } else {
                    createComet("right", null, checkBubble[0][0].y);
@@ -762,8 +761,8 @@
                  checkBubble[0][0].matched();
                  checkBubble[0][1].matched();
                  checkBubble[0][2].matched();
-                 checkBubble[1][4].matched();
-                 checkBubble[2][4].matched();
+                 checkBubble[1][2].matched();
+                 checkBubble[2][2].matched();
                  return;
                }
              }
@@ -871,13 +870,13 @@
               //
               /////////////////////////
 
-             if (checkBubble[0][0] != null && checkBubble [1][4] != null && checkBubble[2][4] != null && checkBubble[3][4] != null && checkBubble[4][4] != null) {
+             if (checkBubble[0][0] != null && checkBubble [1][4] != null && checkBubble[2][4] != null && checkBubble[3][2] != null && checkBubble[4][2] != null) {
                var bColor = [
                  checkBubble[0][0].frame,
-                 checkBubble[1][4].frame,
-                 checkBubble[2][4].frame,
-                 checkBubble[3][4].frame,
-                 checkBubble[4][4].frame
+                 checkBubble[1][2].frame,
+                 checkBubble[2][2].frame,
+                 checkBubble[3][2].frame,
+                 checkBubble[4][2].frame
                ];
 
                matched = checkBubbleColor(bColor);
@@ -886,10 +885,10 @@
                  checkBubble[2][4].spawnWild = true;
 
                  checkBubble[0][0].matched();
-                 checkBubble[1][4].matched();
-                 checkBubble[2][4].matched();
-                 checkBubble[3][4].matched();
-                 checkBubble[4][4].matched();
+                 checkBubble[1][2].matched();
+                 checkBubble[2][2].matched();
+                 checkBubble[3][2].matched();
+                 checkBubble[4][2].matched();
                  return;
                }
              }
@@ -901,12 +900,12 @@
                //
                /////////////////////////
 
-              if (checkBubble[0][0] != null && checkBubble [1][4] != null && checkBubble[2][4] != null && checkBubble[3][4] != null) {
+              if (checkBubble[0][0] != null && checkBubble [1][4] != null && checkBubble[2][2] != null && checkBubble[3][2] != null) {
                 var bColor = [
                   checkBubble[0][0].frame,
-                  checkBubble[1][4].frame,
-                  checkBubble[2][4].frame,
-                  checkBubble[3][4].frame
+                  checkBubble[1][2].frame,
+                  checkBubble[2][2].frame,
+                  checkBubble[3][2].frame
                 ];
 
                 matched = checkBubbleColor(bColor);
@@ -920,9 +919,9 @@
                   }
 
                   checkBubble[0][0].matched();
-                  checkBubble[1][4].matched();
-                  checkBubble[2][4].matched();
-                  checkBubble[3][4].matched();
+                  checkBubble[1][2].matched();
+                  checkBubble[2][2].matched();
+                  checkBubble[3][2].matched();
                   return;
                 }
               }
@@ -934,19 +933,19 @@
                //
                /////////////////////////
 
-              if (checkBubble[0][0] != null && checkBubble [1][4] != null && checkBubble[2][4] != null) {
+              if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null) {
                 var bColor = [
                   checkBubble[0][0].frame,
-                  checkBubble[1][4].frame,
-                  checkBubble[2][4].frame
+                  checkBubble[1][2].frame,
+                  checkBubble[2][2].frame
                 ];
 
                 matched = checkBubbleColor(bColor);
 
                 if (matched == true) {
                   checkBubble[0][0].matched();
-                  checkBubble[1][4].matched();
-                  checkBubble[2][4].matched();
+                  checkBubble[1][2].matched();
+                  checkBubble[2][2].matched();
                   return;
                 }
               }
