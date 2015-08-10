@@ -143,15 +143,9 @@
           bubble.scale.setTo(0.1, 0.1);
           bubble.spawnWild = false;
           bubble.moving = false;
+          bubble.big = false;
           bubble.matched = function () {
-            if (this.spawnWild != true) {
-              createBubble(this.x, this.y, game.rnd.integerInRange(0, 7));
-            }
-            else {
-              createBubble(this.x, this.y, 8);
-            }
-            this.destroy();
-            game.time.events.add(Phaser.Timer.SECOND * 0.4, checkBubbles, this)
+            destroyBubble(this);
           };
           bubble.events.onInputDown.add(selectBubble, this);
           bubble.events.onInputUp.add(releaseBubble, this);
@@ -171,15 +165,9 @@
           bubble.scale.setTo(0.1, 0.1);
           bubble.spawnWild = false;
           bubble.moving = false;
+          bubble.big = true;
           bubble.matched = function () {
-            if (this.spawnWild != true) {
-              createBubble(this.x, this.y, game.rnd.integerInRange(0, 7));
-            }
-            else {
-              createBubble(this.x, this.y, 8);
-            }
-            this.destroy();
-            game.time.events.add(Phaser.Timer.SECOND * 0.4, checkBubbles, this)
+            destroyBubble(this);
           };
           //bubble.events.onInputDown.add(selectBubble, this);
           //bubble.events.onInputUp.add(releaseBubble, this);
