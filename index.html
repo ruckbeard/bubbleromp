@@ -17,13 +17,23 @@
             BIG_BUBBLE_SIZE = 96,
             BUBBLE_SPACING = 4,
             BUBBLE_SIZE_SPACED = BUBBLE_SIZE + BUBBLE_SPACING,
+            BIG_BUBBLE_SIZE_SPACED = BIG_BUBBLE_SIZE + BUBBLE_SPACING,
             canClick,
             firstSelectionX = 0,
             firstSelectionY = 0,
             secondSelectionX = 0,
             secondSelectionY = 0,
+            thirdSelectionX = 0,
+            thirdSelectionY = 0,
+            fourthSelectionX = 0,
+            fourthSelectionY = 0,
+            fifthSelectionX = 0,
+            fifthSelectionY = 0,
             firstSelectedBubble = 0,
             secondSelectedBubble = 0,
+            thirdSelectedBubble = 0,
+            fourthSelectedBubble = 0,
+            fifthSelectedBubble = 0,
             move = 0,
             comboTimer = 0,
             comboMultiplier = 0,
@@ -36,7 +46,8 @@
             gameOver = false,
             bubbles,
             comets,
-            asteroids;
+            asteroids,
+            marker;
 
         function preload () {
             game.load.spritesheet('BUBBLES', 'bubble_strip.png', BUBBLE_SIZE, BUBBLE_SIZE);
@@ -61,6 +72,9 @@
             createBoard();
             canClick = true;
 
+            console.log(bubbleAtPosition(BOARD_COLS[0], BOARD_ROWS[0], "normal"));
+            console.log(bubbleAtPosition(BOARD_COLS[0], BOARD_ROWS[0], "big"));
+
             comets = game.add.group();
             comets.enableBody = true;
             comets.physicsBodyType = Phaser.Physics.ARCADE;
@@ -73,32 +87,6 @@
         function update() {
           game.physics.arcade.overlap(comets, bubbles, cometCollisionHandler, null, this);
           game.physics.arcade.overlap(asteroids, bubbles, asteroidCollisionHandler, null, this);
-
-          if (move == 1) {
-            if (firstSelectedBubble.x < secondSelectionX) {firstSelectedBubble.x += 4;};
-            if (firstSelectedBubble.x > secondSelectionX) {firstSelectedBubble.x -= 4;};
-            if (firstSelectedBubble.y < secondSelectionY) {firstSelectedBubble.y += 4;};
-            if (firstSelectedBubble.y > secondSelectionY) {firstSelectedBubble.y -= 4;};
-            if (secondSelectedBubble.x < firstSelectionX) {secondSelectedBubble.x += 4;};
-            if (secondSelectedBubble.x > firstSelectionX) {secondSelectedBubble.x -= 4;};
-            if (secondSelectedBubble.y < firstSelectionY) {secondSelectedBubble.y += 4;};
-            if (secondSelectedBubble.y > firstSelectionY) {secondSelectedBubble.y -= 4;};
-            if (firstSelectedBubble.x == secondSelectionX && firstSelectedBubble.y == secondSelectionY && secondSelectedBubble.x == firstSelectionX && secondSelectedBubble.y == firstSelectionY) {
-              canClick = true;
-              setBubblePos(firstSelectedBubble, firstSelectedBubble.x, firstSelectedBubble.y);
-              setBubblePos(secondSelectedBubble, secondSelectedBubble.x, secondSelectedBubble.y);
-              firstSelectedBubble.moving = false;
-              secondSelectedBubble.moving = false;
-              firstSelectedBubble = null;
-              secondSelectedBubble = null;
-              firstSelectionX = 0;
-              firstSelectionY = 0;
-              secondSelectionX = 0;
-              secondSelectionY = 0;
-              move = 0;
-              checkBubbles();
-            }
-          }
         }
 
         function createBoard() {
@@ -144,6 +132,29 @@
           bubble.spawnWild = false;
           bubble.moving = false;
           bubble.big = false;
+          bubble.targetX = null;
+          bubble.targetY = null;
+          bubble.move = false;
+          bubble.update = function () {
+            if (this.move == true) {
+              this.moving = true;
+              canClick = false;
+              move = true;
+              if (this.x < this.targetX) { this.x += 4 };
+              if (this.x > this.targetX) { this.x -= 4 };
+              if (this.y < this.targetY) { this.y += 4 };
+              if (this.y > this.targetY) { this.y -= 4 };
+              if (this.x == this.targetX && this.y == this.targetY) {
+                this.moving = false;
+                game.time.events.add(Phaser.Timer.SECOND * 0.1, checkBubbles, this)
+                this.move = false;
+                game.time.events.add(Phaser.Timer.SECOND * 0.1, function () {
+                  canClick = true;
+                  move = false;
+                }, this);
+              }
+            }
+          };
           bubble.matched = function () {
             destroyBubble(this);
           };
@@ -166,11 +177,32 @@
           bubble.spawnWild = false;
           bubble.moving = false;
           bubble.big = true;
+          //bubble.body.setSize(80, 80);
+          bubble.update = function () {
+            if (this.move == true) {
+              this.moving = true;
+              canClick = false;
+              move = true;
+              if (this.x < this.targetX) { this.x += 4 };
+              if (this.x > this.targetX) { this.x -= 4 };
+              if (this.y < this.targetY) { this.y += 4 };
+              if (this.y > this.targetY) { this.y -= 4 };
+              if (this.x == this.targetX && this.y == this.targetY) {
+                this.moving = false;
+                game.time.events.add(Phaser.Timer.SECOND * 0.12, checkBubbles, this)
+                this.move = false;
+                game.time.events.add(Phaser.Timer.SECOND * 0.1, function () {
+                  canClick = true;
+                  move = false;
+                }, this);
+              }
+            }
+          };
           bubble.matched = function () {
             destroyBubble(this);
           };
-          //bubble.events.onInputDown.add(selectBubble, this);
-          //bubble.events.onInputUp.add(releaseBubble, this);
+          bubble.events.onInputDown.add(selectBigBubble, this);
+          bubble.events.onInputUp.add(releaseBigBubble, this);
 
           s = game.add.tween(bubble.scale).to({ x:1, y:1 } , 500, Phaser.Easing.Linear.None);
           s.start();
@@ -192,51 +224,366 @@
           return posX + posY * BOARD_COLS.length;
         }
 
+        function bubbleAtPosition(posX, posY, size) {
+          if (size == "normal") {
+            for (var i = 0; i < bubbles.children.length; i++) {
+              if (Phaser.Rectangle.contains(bubbles.children[i].body, posX, posY) && bubbles.children[i].big == false) {
+                return bubbles.children[i];
+              }
+            }
+          } else if (size == "big") {
+            for (var i = 0; i < bubbles.children.length; i++) {
+              if (Phaser.Rectangle.contains(bubbles.children[i].body, posX, posY) && bubbles.children[i].big == true) {
+                return bubbles.children[i];
+              }
+            }
+          }
+        }
+
         function selectBubble(bubble, pointer) {
           if (canClick) {
             firstSelectedBubble = bubble;
             firstSelectionX = bubble.x;
-            firstSelectionY = bubble.y
+            firstSelectionY = bubble.y;
+
+            grow = game.add.tween(bubble.scale).to({ x:1.2, y:1.2 } , 500, Phaser.Easing.Linear.None);
+            shrink = game.add.tween(bubble.scale).to({ x:1, y:1 } , 500, Phaser.Easing.Linear.None);
+            grow.chain(shrink);
+            shrink.chain(grow);
+            grow.start();
+
+            marker = game.add.graphics();
+            marker.lineStyle(1, 0xffffff, 1);
+            marker.drawRoundedRect(0, 0, 52, 52, 5);
+            marker.x = bubble.x - 26;
+            marker.y = bubble.y - 26;
+            marker.update = function() {
+              var deg = game.math.radToDeg(game.math.angleBetween(firstSelectedBubble.x, firstSelectedBubble.y, game.input.x, game.input.y));
+              var len = game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, game.input.x, game.input.y);
+
+              if (len < 26) {
+                marker.x = firstSelectedBubble.x - 26;
+                marker.y = firstSelectedBubble.y - 26;
+              } else if ((deg < -67.5 && deg > -112.5 && len > 26) && game.input.y > BOARD_ROWS[0]) {
+                marker.x = firstSelectedBubble.x - 26;
+                marker.y = firstSelectedBubble.y - 26 - BUBBLE_SIZE_SPACED;
+              } else if ((deg < -22.5 && deg > -67.5 && len > 26) && game.input.x < BOARD_COLS[8] && game.input.y > BOARD_ROWS[0]) {
+                marker.x = firstSelectedBubble.x - 26 + BUBBLE_SIZE_SPACED;
+                marker.y = firstSelectedBubble.y - 26 - BUBBLE_SIZE_SPACED;
+              } else if ((deg > -22.5 && deg < 22.5 && len > 26) && game.input.x < BOARD_COLS[8]) {
+                marker.x = firstSelectedBubble.x - 26 + BUBBLE_SIZE_SPACED;
+                marker.y = firstSelectedBubble.y - 26;
+              } else if ((deg > 22.5 && deg < 67.5 && len > 26) && game.input.x < BOARD_COLS[8] && game.input.y < BOARD_ROWS[8]) {
+                marker.x = firstSelectedBubble.x - 26 + BUBBLE_SIZE_SPACED;
+                marker.y = firstSelectedBubble.y - 26 + BUBBLE_SIZE_SPACED;
+              } else if ((deg > 67.5 && deg < 112.5 && len > 26) && game.input.y < BOARD_ROWS[8]) {
+                marker.x = firstSelectedBubble.x - 26;
+                marker.y = firstSelectedBubble.y - 26 + BUBBLE_SIZE_SPACED;
+              } else if ((deg > 115.5 && deg < 157.5 && len > 26) && game.input.x > BOARD_COLS[0] && game.input.y < BOARD_ROWS[8]) {
+                marker.x = firstSelectedBubble.x - 26 - BUBBLE_SIZE_SPACED;
+                marker.y = firstSelectedBubble.y - 26 + BUBBLE_SIZE_SPACED;
+              } else if ((deg > 157.5 || deg < -157.5 && len > 26) && game.input.x > BOARD_COLS[0]) {
+                marker.x = firstSelectedBubble.x - 26 - BUBBLE_SIZE_SPACED;
+                marker.y = firstSelectedBubble.y - 26;
+              } else if ((deg > -157.5 && deg < -112.5 && len > 26) && game.input.x > BOARD_COLS[0] && game.input.y > BOARD_ROWS[0]) {
+                marker.x = firstSelectedBubble.x - 26 - BUBBLE_SIZE_SPACED;
+                marker.y = firstSelectedBubble.y - 26 - BUBBLE_SIZE_SPACED;
+              }
+            }
+          }
+        }
+
+        function selectBigBubble(bubble, pointer) {
+          if (canClick) {
+            firstSelectedBubble = bubble;
+            firstSelectionX = bubble.x;
+            firstSelectionY = bubble.y;
+
+            //grow = game.add.tween(bubble.scale).to({ x:1.2, y:1.2 } , 500, Phaser.Easing.Linear.None);
+            //shrink = game.add.tween(bubble.scale).to({ x:1, y:1 } , 500, Phaser.Easing.Linear.None);
+            //grow.chain(shrink);
+            //shrink.chain(grow);
+            //grow.start();
+
+            marker = game.add.graphics();
+            marker.lineStyle(1, 0xffffff, 1);
+            marker.drawRoundedRect(0, 0, 104, 104, 5);
+            marker.x = bubble.x - 52;
+            marker.y = bubble.y - 52;
+            marker.pos = 0;
+            marker.update = function() {
+              var deg = game.math.radToDeg(game.math.angleBetween(firstSelectedBubble.x, firstSelectedBubble.y, game.input.x, game.input.y));
+              var len = game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, game.input.x, game.input.y);
+
+
+              if (len < 52) {
+                marker.x = firstSelectedBubble.x - 52;
+                marker.y = firstSelectedBubble.y - 52;
+                marker.pos = 0;
+              } else if ((deg < -67.5 && deg > -112.5 && len > 52 && len < 104) && game.input.y > BOARD_ROWS[0]) {
+                if (bubbleAtPosition(marker.x + 26, marker.y + 26, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 26, marker.y + 26, "big") != null) {
+                   marker.x = bubbleAtPosition(marker.x + 26, marker.y + 26, "big").x - 52;
+                   marker.y = bubbleAtPosition(marker.x + 26, marker.y + 26, "big").y - 52;
+                 } else if (bubbleAtPosition(marker.x + 78, marker.y + 26, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 78, marker.y + 26, "big") != null) {
+                   marker.x = bubbleAtPosition(marker.x + 78, marker.y + 26, "big").x - 52;
+                   marker.y = bubbleAtPosition(marker.x + 78, marker.y + 26, "big").y - 52;
+                 } else {
+                   marker.x = firstSelectedBubble.x - 52;
+                   marker.y = firstSelectedBubble.y - 104;
+                   marker.pos = 1;
+                 }
+              } else if ((deg < -22.5 && deg > -67.5 && len > 52 && len < 104) && game.input.x < BOARD_COLS[8] && game.input.y > BOARD_ROWS[0]) {
+                if (bubbleAtPosition(marker.x + 26, marker.y + 26, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 26, marker.y + 26, "big") != null) {
+                   marker.x = bubbleAtPosition(marker.x + 26, marker.y + 26, "big").x - 52;
+                   marker.y = bubbleAtPosition(marker.x + 26, marker.y + 26, "big").y - 52;
+                 } else if (bubbleAtPosition(marker.x + 78, marker.y + 26, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 78, marker.y + 26, "big") != null) {
+                  marker.x = bubbleAtPosition(marker.x + 78, marker.y + 26, "big").x - 52;
+                  marker.y = bubbleAtPosition(marker.x + 78, marker.y + 26, "big").y - 52;
+                } else {
+                  marker.x = firstSelectedBubble.x;
+                  marker.y = firstSelectedBubble.y - 104;
+                  marker.pos = 2;
+                }
+              } else if ((deg > -22.5 && deg < 22.5 && len > 52 && len < 104) && game.input.x < BOARD_COLS[8]) {
+                if (bubbleAtPosition(marker.x + 78, marker.y + 26, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 78, marker.y + 26, "big") != null && game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, bubbleAtPosition(marker.x + 78, marker.y + 26, "big").x, bubbleAtPosition(marker.x + 78, marker.y + 26, "big").y) < 156) {
+                 marker.x = bubbleAtPosition(marker.x + 78, marker.y + 26, "big").x - 52;
+                 marker.y = bubbleAtPosition(marker.x + 78, marker.y + 26, "big").y - 52;
+               } else if (bubbleAtPosition(marker.x + 78, marker.y + 78, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 78, marker.y + 78, "big") != null  && game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, bubbleAtPosition(marker.x + 78, marker.y + 78, "big").x, bubbleAtPosition(marker.x + 78, marker.y + 78, "big").y) < 156) {
+                  marker.x = bubbleAtPosition(marker.x + 78, marker.y + 78, "big").x - 52;
+                  marker.y = bubbleAtPosition(marker.x + 78, marker.y + 78, "big").y - 52;
+               } else {
+                   marker.x = firstSelectedBubble.x;
+                   marker.y = firstSelectedBubble.y - 52;
+                   marker.pos = 3;
+                 }
+              } else if ((deg > 22.5 && deg < 67.5 && len > 52 && len < 104) && game.input.x < BOARD_COLS[8] && game.input.y < BOARD_ROWS[8]) {
+                if (bubbleAtPosition(marker.x + 78, marker.y + 26, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 78, marker.y + 26, "big") != null && game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, bubbleAtPosition(marker.x + 78, marker.y + 26, "big").x, bubbleAtPosition(marker.x + 78, marker.y + 26, "big").y) < 156) {
+                 marker.x = bubbleAtPosition(marker.x + 78, marker.y + 26, "big").x - 52;
+                 marker.y = bubbleAtPosition(marker.x + 78, marker.y + 26, "big").y - 52;
+               } else if (bubbleAtPosition(marker.x + 78, marker.y + 78, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 78, marker.y + 78, "big") != null  && game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, bubbleAtPosition(marker.x + 78, marker.y + 78, "big").x, bubbleAtPosition(marker.x + 78, marker.y + 78, "big").y) < 156) {
+                  marker.x = bubbleAtPosition(marker.x + 78, marker.y + 78, "big").x - 52;
+                  marker.y = bubbleAtPosition(marker.x + 78, marker.y + 78, "big").y - 52;
+               } else if (bubbleAtPosition(marker.x + 26, marker.y + 78, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 26, marker.y + 78, "big") != null && game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, bubbleAtPosition(marker.x + 26, marker.y + 78, "big").x, bubbleAtPosition(marker.x + 26, marker.y + 78, "big").y) < 156) {
+                marker.x = bubbleAtPosition(marker.x + 26, marker.y + 78, "big").x - 52;
+                marker.y = bubbleAtPosition(marker.x + 26, marker.y + 78, "big").y - 52;
+              } else {
+                marker.x = firstSelectedBubble.x;
+                marker.y = firstSelectedBubble.y;
+                marker.pos = 4;
+               }
+              } else if ((deg > 67.5 && deg < 112.5 && len > 52 && len < 104) && game.input.y < BOARD_ROWS[8]) {
+                if (bubbleAtPosition(marker.x + 26, marker.y + 78, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 26, marker.y + 78, "big") != null && game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, bubbleAtPosition(marker.x + 26, marker.y + 78, "big").x, bubbleAtPosition(marker.x + 26, marker.y + 78, "big").y) < 156) {
+                 marker.x = bubbleAtPosition(marker.x + 26, marker.y + 78, "big").x - 52;
+                 marker.y = bubbleAtPosition(marker.x + 26, marker.y + 78, "big").y - 52;
+               } else if (bubbleAtPosition(marker.x + 78, marker.y + 78, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 78, marker.y + 78, "big") != null  && game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, bubbleAtPosition(marker.x + 78, marker.y + 78, "big").x, bubbleAtPosition(marker.x + 78, marker.y + 78, "big").y) < 156) {
+                  marker.x = bubbleAtPosition(marker.x + 78, marker.y + 78, "big").x - 52;
+                  marker.y = bubbleAtPosition(marker.x + 78, marker.y + 78, "big").y - 52;
+               } else {
+                  marker.x = firstSelectedBubble.x - 52;
+                  marker.y = firstSelectedBubble.y;
+                  marker.pos = 5;
+                }
+              } else if ((deg > 115.5 && deg < 157.5 && len > 52 && len < 104) && game.input.x > BOARD_COLS[0] && game.input.y < BOARD_ROWS[8]) {
+                if (bubbleAtPosition(marker.x + 26, marker.y + 26, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 26, marker.y + 26, "big") != null) {
+                   marker.x = bubbleAtPosition(marker.x + 26, marker.y + 26, "big").x - 52;
+                   marker.y = bubbleAtPosition(marker.x + 26, marker.y + 26, "big").y - 52;
+                 } else if (bubbleAtPosition(marker.x + 78, marker.y + 78, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 78, marker.y + 78, "big") != null  && game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, bubbleAtPosition(marker.x + 78, marker.y + 78, "big").x, bubbleAtPosition(marker.x + 78, marker.y + 78, "big").y) < 156) {
+                  marker.x = bubbleAtPosition(marker.x + 78, marker.y + 78, "big").x - 52;
+                  marker.y = bubbleAtPosition(marker.x + 78, marker.y + 78, "big").y - 52;
+                 } else if (bubbleAtPosition(marker.x + 26, marker.y + 78, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 26, marker.y + 78, "big") != null && game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, bubbleAtPosition(marker.x + 26, marker.y + 78, "big").x, bubbleAtPosition(marker.x + 26, marker.y + 78, "big").y) < 156) {
+                  marker.x = bubbleAtPosition(marker.x + 26, marker.y + 78, "big").x - 52;
+                  marker.y = bubbleAtPosition(marker.x + 26, marker.y + 78, "big").y - 52;
+                } else {
+                  marker.x = firstSelectedBubble.x - 104;
+                  marker.y = firstSelectedBubble.y;
+                  marker.pos = 6;
+                }
+              } else if (((deg > 157.5 || deg < -157.5) && len > 52 && len < 104) && game.input.x > BOARD_COLS[0]) {
+                if (bubbleAtPosition(marker.x + 26, marker.y + 26, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 26, marker.y + 26, "big") != null) {
+                   marker.x = bubbleAtPosition(marker.x + 26, marker.y + 26, "big").x - 52;
+                   marker.y = bubbleAtPosition(marker.x + 26, marker.y + 26, "big").y - 52;
+                 } else if (bubbleAtPosition(marker.x + 26, marker.y + 78, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 26, marker.y + 78, "big") != null && game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, bubbleAtPosition(marker.x + 26, marker.y + 78, "big").x, bubbleAtPosition(marker.x + 26, marker.y + 78, "big").y) < 156) {
+                  marker.x = bubbleAtPosition(marker.x + 26, marker.y + 78, "big").x - 52;
+                  marker.y = bubbleAtPosition(marker.x + 26, marker.y + 78, "big").y - 52;
+                } else {
+                  marker.x = firstSelectedBubble.x - 104;
+                  marker.y = firstSelectedBubble.y - 52;
+                  marker.pos = 7;
+                }
+              } else if ((deg > -157.5 && deg < -112.5 && len > 52 && len < 104) && game.input.x > BOARD_COLS[0] && game.input.y > BOARD_ROWS[0]) {
+                if (bubbleAtPosition(marker.x + 26, marker.y + 26, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 26, marker.y + 26, "big") != null) {
+                   marker.x = bubbleAtPosition(marker.x + 26, marker.y + 26, "big").x - 52;
+                   marker.y = bubbleAtPosition(marker.x + 26, marker.y + 26, "big").y - 52;
+                 } else if (bubbleAtPosition(marker.x + 26, marker.y + 78, "big") !== firstSelectedBubble && bubbleAtPosition(marker.x + 26, marker.y + 78, "big") != null && game.math.distance(firstSelectedBubble.x, firstSelectedBubble.y, bubbleAtPosition(marker.x + 26, marker.y + 78, "big").x, bubbleAtPosition(marker.x + 26, marker.y + 78, "big").y) < 156) {
+                  marker.x = bubbleAtPosition(marker.x + 26, marker.y + 78, "big").x - 52;
+                  marker.y = bubbleAtPosition(marker.x + 26, marker.y + 78, "big").y - 52;
+                } else {
+                  marker.x = firstSelectedBubble.x - 104;
+                  marker.y = firstSelectedBubble.y - 104;
+                  marker.pos = 8;
+                }
+              } else if ((deg < -67.5 && deg > -112.5 && len > 104) && game.input.y > BOARD_ROWS[0]) {
+                marker.x = firstSelectedBubble.x - 52;
+                marker.y = firstSelectedBubble.y - 156;
+                marker.pos = 0;
+              } else if ((deg < -22.5 && deg > -67.5 && len > 104) && game.input.x < BOARD_COLS[7] && game.input.y > BOARD_ROWS[1]) {
+                marker.x = firstSelectedBubble.x + 52;
+                marker.y = firstSelectedBubble.y - 156;
+                marker.pos = 0;
+              } else if ((deg > -22.5 && deg < 22.5 && len > 104) && game.input.x < BOARD_COLS[8]) {
+                marker.x = firstSelectedBubble.x + 52;
+                marker.y = firstSelectedBubble.y - 52;
+                marker.pos = 0;
+              } else if ((deg > 22.5 && deg < 67.5 && len > 104) && game.input.x < BOARD_COLS[7] && game.input.y < BOARD_ROWS[7]) {
+                marker.x = firstSelectedBubble.x + 52;
+                marker.y = firstSelectedBubble.y + 52;
+                marker.pos = 0;
+              } else if ((deg > 67.5 && deg < 112.5 && len > 104) && game.input.y < BOARD_ROWS[8]) {
+                marker.x = firstSelectedBubble.x - 52;
+                marker.y = firstSelectedBubble.y + 52;
+                marker.pos = 0;
+              } else if ((deg > 115.5 && deg < 157.5 && len > 104) && game.input.x > BOARD_COLS[1] && game.input.y < BOARD_ROWS[7]) {
+                marker.x = firstSelectedBubble.x - 156;
+                marker.y = firstSelectedBubble.y + 52;
+                marker.pos = 0;
+              } else if ((deg > 157.5 || deg < -157.5 && len > 104) && game.input.x > BOARD_COLS[0]) {
+                marker.x = firstSelectedBubble.x - 156;
+                marker.y = firstSelectedBubble.y - 52;
+                marker.pos = 0;
+              } else if ((deg > -157.5 && deg < -112.5 && len > 104) && game.input.x > BOARD_COLS[1] && game.input.y > BOARD_ROWS[1]) {
+                marker.x = firstSelectedBubble.x - 156;
+                marker.y = firstSelectedBubble.y - 156;
+                marker.pos = 0;
+              }
+            }
           }
         }
 
         function releaseBubble(selectedBubble, pointer) {
-          console.log(selectedBubble.id);
+          if (grow.isRunning) {
+            grow.stop();
+            selectedBubble.scale.setTo(1, 1);
+          }
+          if (shrink.isRunning) {
+            shrink.stop();
+            selectedBubble.scale.setTo(1, 1);
+          }
           if (canClick) {
-            var deg = game.math.radToDeg(game.math.angleBetween(selectedBubble.x, selectedBubble.y, pointer.worldX, pointer.worldY));
-            var len = game.math.distance(selectedBubble.x, selectedBubble.y, pointer.worldX, pointer.worldY);
-
-            if (deg < -67.5 && deg > -112.5 && len > 26) {
-              initiateMove(firstSelectedBubble.x, firstSelectedBubble.y - BUBBLE_SIZE_SPACED);
+            if (firstSelectedBubble != null && bubbleAtPosition(marker.x + 26, marker.y + 26, "normal") !== selectedBubble && bubbleAtPosition(marker.x + 26, marker.y + 26, "normal") != null) {
+              secondSelectedBubble = bubbleAtPosition(marker.x + 26, marker.y + 26, "normal");
+              secondSelectionX = secondSelectedBubble.x;
+              secondSelectionY = secondSelectedBubble.y;
+              firstSelectedBubble.targetX = secondSelectionX;
+              firstSelectedBubble.targetY = secondSelectionY;
+              secondSelectedBubble.targetX = firstSelectionX;
+              secondSelectedBubble.targetY = firstSelectionY;
+              firstSelectedBubble.move = true;
+              secondSelectedBubble.move = true;
+              firstSelectedBubble = null;
+              secondSelectedBubble = null;
+              marker.destroy();
+            } else {
+              marker.destroy();
             }
+          }
+        }
 
-            if (deg < -22.5 && deg > -67.5 && len > 26) {
-              initiateMove(firstSelectedBubble.x + BUBBLE_SIZE_SPACED, firstSelectedBubble.y - BUBBLE_SIZE_SPACED);
+        function releaseBigBubble(selectedBubble, pointer) {
+          /*if (grow.isRunning) {
+            grow.stop();
+            selectedBubble.scale.setTo(1, 1);
+          }
+          if (shrink.isRunning) {
+            shrink.stop();
+            selectedBubble.scale.setTo(1, 1);
+          }*/
+          if (canClick) {
+            if (bubbleAtPosition(marker.x + 26, marker.y + 26, "normal") != null) {
+              secondSelectedBubble = bubbleAtPosition(marker.x + 26, marker.y + 26, "normal");
+              if (marker.pos == 1) {
+                secondSelectedBubble.targetX = firstSelectionX - 26;
+                secondSelectedBubble.targetY = firstSelectionY + 26;
+              } else if (marker.pos == 2 || marker.pos == 0 || marker.pos == 6) {
+                secondSelectedBubble.targetX = firstSelectionX - 26;
+                secondSelectedBubble.targetY = firstSelectionY - 26;
+              } else if (marker.pos == 8) {
+                secondSelectedBubble.targetX = firstSelectionX + 26;
+                secondSelectedBubble.targetY = firstSelectionY + 26;
+              } else if (marker.pos == 7) {
+                secondSelectedBubble.targetX = firstSelectionX + 26;
+                secondSelectedBubble.targetY = firstSelectionY - 26;
+              }
+              secondSelectedBubble.move = true;
             }
-
-            if (deg > -22.5 && deg < 22.5 && len > 26) {
-              initiateMove(firstSelectedBubble.x + BUBBLE_SIZE_SPACED, firstSelectedBubble.y);
+            if (bubbleAtPosition(marker.x + 78, marker.y + 26, "normal") != null) {
+              secondSelectedBubble = bubbleAtPosition(marker.x + 78, marker.y + 26, "normal");
+              if (marker.pos == 1) {
+                secondSelectedBubble.targetX = firstSelectionX + 26;
+                secondSelectedBubble.targetY = firstSelectionY + 26;
+              } else if (marker.pos == 2) {
+                secondSelectedBubble.targetX = firstSelectionX - 26;
+                secondSelectedBubble.targetY = firstSelectionY + 26;
+              } else if (marker.pos == 4 || marker.pos == 8 || marker.pos == 0) {
+                secondSelectedBubble.targetX = firstSelectionX + 26;
+                secondSelectedBubble.targetY = firstSelectionY - 26;
+              } else if (marker.pos == 3) {
+                secondSelectedBubble.targetX = firstSelectionX - 26;
+                secondSelectedBubble.targetY = firstSelectionY - 26;
+              }
+              secondSelectedBubble.move = true;
             }
-
-            if (deg > 22.5 && deg < 67.5 && len > 26) {
-              initiateMove(firstSelectedBubble.x + BUBBLE_SIZE_SPACED, firstSelectedBubble.y + BUBBLE_SIZE_SPACED);
+            if (bubbleAtPosition(marker.x + 26, marker.y + 78, "normal") != null) {
+              secondSelectedBubble = bubbleAtPosition(marker.x + 26, marker.y + 78, "normal");
+              if (marker.pos == 7) {
+                secondSelectedBubble.targetX = firstSelectionX + 26;
+                secondSelectedBubble.targetY = firstSelectionY + 26;
+              } else if (marker.pos == 4 || marker.pos == 8 || marker.pos == 0) {
+                secondSelectedBubble.targetX = firstSelectionX - 26;
+                secondSelectedBubble.targetY = firstSelectionY + 26;
+              } else if (marker.pos == 6) {
+                secondSelectedBubble.targetX = firstSelectionX + 26;
+                secondSelectedBubble.targetY = firstSelectionY - 26;
+              } else if (marker.pos == 5) {
+                secondSelectedBubble.targetX = firstSelectionX - 26;
+                secondSelectedBubble.targetY = firstSelectionY - 26;
+              }
+              secondSelectedBubble.move = true;
             }
-
-            if (deg > 67.5 && deg < 112.5 && len > 26) {
-              initiateMove(firstSelectedBubble.x, firstSelectedBubble.y + BUBBLE_SIZE_SPACED);
+            if (bubbleAtPosition(marker.x + 78, marker.y + 78, "normal") != null) {
+              secondSelectedBubble = bubbleAtPosition(marker.x + 78, marker.y + 78, "normal");
+              if (marker.pos == 2 || marker.pos == 6 || marker.pos == 0) {
+                secondSelectedBubble.targetX = firstSelectionX + 26;
+                secondSelectedBubble.targetY = firstSelectionY + 26;
+              } else if (marker.pos == 3) {
+                secondSelectedBubble.targetX = firstSelectionX - 26;
+                secondSelectedBubble.targetY = firstSelectionY + 26;
+              } else if (marker.pos == 5) {
+                secondSelectedBubble.targetX = firstSelectionX + 26;
+                secondSelectedBubble.targetY = firstSelectionY - 26;
+              } else if (marker.pos == 4) {
+                secondSelectedBubble.targetX = firstSelectionX - 26;
+                secondSelectedBubble.targetY = firstSelectionY - 26;
+              }
+              secondSelectedBubble.move = true;
             }
-
-            if (deg > 115.5 && deg < 157.5 && len > 26) {
-              initiateMove(firstSelectedBubble.x - BUBBLE_SIZE_SPACED, firstSelectedBubble.y + BUBBLE_SIZE_SPACED);
+            if (bubbleAtPosition(marker.x + 52, marker.y + 52, "big") !== selectedBubble && bubbleAtPosition(marker.x + 52, marker.y + 52, "big") != null) {
+              secondSelectedBubble = bubbleAtPosition(marker.x + 52, marker.y + 52, "big");
+              secondSelectionX = secondSelectedBubble.x;
+              secondSelectionY = secondSelectedBubble.y;
+              firstSelectedBubble.targetX = secondSelectionX;
+              firstSelectedBubble.targetY = secondSelectionY;
+              secondSelectedBubble.targetX = firstSelectionX;
+              secondSelectedBubble.targetY = firstSelectionY;
+              firstSelectedBubble.move = true;
+              secondSelectedBubble.move = true;
+            } else if (bubbleAtPosition(marker.x + 52, marker.y + 52, "big") !== selectedBubble) {
+              firstSelectedBubble.targetX = marker.x + 52;
+              firstSelectedBubble.targetY = marker.y + 52;
+              firstSelectedBubble.move = true;
             }
-
-            if (deg > 157.5 || deg < -157.5 && len > 26) {
-              initiateMove(firstSelectedBubble.x - BUBBLE_SIZE_SPACED, firstSelectedBubble.y);
-            }
-
-            if (deg > -157.5 && deg < -112.5 && len > 26) {
-              initiateMove(firstSelectedBubble.x - BUBBLE_SIZE_SPACED, firstSelectedBubble.y - BUBBLE_SIZE_SPACED)
-            }
+            firstSelectedBubble = null;
+            secondSelectedBubble = null;
+            marker.destroy();
           }
         }
 
@@ -257,703 +604,663 @@
           game.time.events.add(Phaser.Timer.SECOND * 0.4, checkBubbles, this)
         }
 
-        function initiateMove(x, y) {
-          canClick = false;
-
-          if (x >= BOARD_COLS[0] && x <= BOARD_COLS[8] && y >= BOARD_ROWS[0] && y <= BOARD_ROWS[8])
-            secondSelectedBubble = getBubble(x, y);
-          if (secondSelectedBubble == null) {
-            canClick = true;
-            firstSelectedBubble = null;
-            firstSelectionX = 0;
-            firstSelectionY = 0;
-          }
-          else {
-            secondSelectionX = secondSelectedBubble.x;
-            secondSelectionY = secondSelectedBubble.y;
-
-            move = 1;
-            firstSelectedBubble.moving = true;
-            secondSelectedBubble.moving = true;
-          }
-        }
-
         function checkBubbles() {
           var matched = false;
           for (xx = BOARD_COLS[0]; xx <= BOARD_COLS[8]; xx += BUBBLE_SIZE_SPACED) {
             for (yy = BOARD_ROWS[0]; yy <= BOARD_ROWS[8]; yy += BUBBLE_SIZE_SPACED) {
-              /*
-                This function could probably be implemented better. This is the
-                best soloution I came up with. This function loops through every
-                bubble on the board and stores adjecant bubbles in an array. The
-                pattern is much like a 5x5 grid. Visually looks like this:
+              if (move == false) {
+                /*
+                  This function could probably be implemented better. This is the
+                  best soloution I came up with. This function loops through every
+                  bubble on the board and stores adjecant bubbles in an array. The
+                  pattern is much like a 5x5 grid. Visually looks like this:
 
 
-                                              * * * *
-                                              * * * *
-                bubble starting the check-> * * * * *
-                                            * * * * *
-                                            * * * * *
-                                            *
-                                            *
+                                                * * * *
+                                                * * * *
+                  bubble starting the check-> * * * * *
+                                              * * * * *
+                                              * * * * *
+                                              *
+                                              *
 
-                You can then use this array to check for patterns by getting the
-                frame of the bubbles in the order and pattern you want them to be
-                checked, and sending them to the function that checks if the
-                colors match.
-              */
-              var checkBubble = [
-                [
-                  getBubble(xx, yy),
-                  getBubble(xx, yy + BUBBLE_SIZE_SPACED),
-                  getBubble(xx, yy + BUBBLE_SIZE_SPACED * 2),
-                  getBubble(xx, yy + BUBBLE_SIZE_SPACED * 3),
-                  getBubble(xx, yy + BUBBLE_SIZE_SPACED * 4)
-                ],
-                [
-                  //getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 4),
-                  //getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 3),
-                  xx == BOARD_COLS[8] ? null : getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 2),
-                  xx == BOARD_COLS[8] ? null : getBubble(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED),
-                  xx == BOARD_COLS[8] ? null : getBubble(xx + BUBBLE_SIZE_SPACED, yy),
-                  xx == BOARD_COLS[8] ? null : getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED),
-                  xx == BOARD_COLS[8] ? null : getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 2),
-                  //getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 3),
-                  //getBubble(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 4)
-                ],
-                [
-                  //getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 4),
-                  //getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 3),
-                  xx >= BOARD_COLS[7] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 2),
-                  xx >= BOARD_COLS[7] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED),
-                  xx >= BOARD_COLS[7] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy),
-                  xx >= BOARD_COLS[7] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED),
-                  xx >= BOARD_COLS[7] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 2),
-                  //getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 3),
-                  //getBubble(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 4)
-                ],
-                [
-                  //getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 4),
-                  //getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 3),
-                  xx >= BOARD_COLS[6] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 2),
-                  xx >= BOARD_COLS[6] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED),
-                  xx >= BOARD_COLS[6] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy),
-                  xx >= BOARD_COLS[6] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED),
-                  xx >= BOARD_COLS[6] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 2),
-                  //getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 3),
-                  //getBubble(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 4)
-                ],
-                [
-                  //getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 4),
-                  //getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 3),
-                  xx >= BOARD_COLS[5] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 2),
-                  xx >= BOARD_COLS[5] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED),
-                  xx >= BOARD_COLS[5] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy),
-                  xx >= BOARD_COLS[5] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED),
-                  xx >= BOARD_COLS[5] ? null : getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 2),
-                  //getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 3),
-                  //getBubble(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 4)
-                ],
-              ];
-
-              if (checkBubble[0][0] != null && checkBubble[1][2] != null && checkBubble[0][1] != null && checkBubble[1][3] != null) {
-                var bColor = [
-                  checkBubble[0][0].frame,
-                  checkBubble[0][1].frame,
-                  checkBubble[1][2].frame,
-                  checkBubble[1][3].frame
+                  You can then use this array to check for patterns by getting the
+                  frame of the bubbles in the order and pattern you want them to be
+                  checked, and sending them to the function that checks if the
+                  colors match.
+                */
+                var checkBubble = [
+                  [
+                    bubbleAtPosition(xx, yy, "normal"),
+                    bubbleAtPosition(xx, yy + BUBBLE_SIZE_SPACED, "normal"),
+                    bubbleAtPosition(xx, yy + BUBBLE_SIZE_SPACED * 2, "normal"),
+                    bubbleAtPosition(xx, yy + BUBBLE_SIZE_SPACED * 3, "normal"),
+                    bubbleAtPosition(xx, yy + BUBBLE_SIZE_SPACED * 4, "normal")
+                  ],
+                  [
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED * 2, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED, yy - BUBBLE_SIZE_SPACED, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED, yy, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED, yy + BUBBLE_SIZE_SPACED * 2, "normal"),
+                  ],
+                  [
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED * 2, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 2, yy - BUBBLE_SIZE_SPACED, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 2, yy, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 2, yy + BUBBLE_SIZE_SPACED * 2, "normal"),
+                  ],
+                  [
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED * 2, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 3, yy - BUBBLE_SIZE_SPACED, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 3, yy, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 3, yy + BUBBLE_SIZE_SPACED * 2, "normal"),
+                  ],
+                  [
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED * 2, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 4, yy - BUBBLE_SIZE_SPACED, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 4, yy, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED, "normal"),
+                    bubbleAtPosition(xx + BUBBLE_SIZE_SPACED * 4, yy + BUBBLE_SIZE_SPACED * 2, "normal"),
+                  ],
                 ];
 
-                matched = checkBubbleColor(bColor);
-
-                if (matched == true) {
-                  createBigBubble(checkBubble[0][0].x + 26, checkBubble[0][0].y + 26, checkBubble[0][0].frame);
-
-                  checkBubble[0][0].destroy();
-                  checkBubble[0][1].destroy();
-                  checkBubble[1][2].destroy();
-                  checkBubble[1][3].destroy();
-                }
-              }
-
-              /////////////////////////
-              //
-              //   v origin
-              //       *
-              //       *
-              //   * * * * *
-              //       *
-              //       *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [1][2] != null &&
-               checkBubble[2][2] != null && checkBubble[3][2] != null &&
-               checkBubble[4][2] != null && checkBubble[2][0] != null &&
-               checkBubble[2][1] != null && checkBubble[2][3] != null && checkBubble[2][4] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[1][2].frame,
-                 checkBubble[2][2].frame,
-                 checkBubble[3][2].frame,
-                 checkBubble[4][2].frame,
-                 checkBubble[2][0].frame,
-                 checkBubble[2][1].frame,
-                 checkBubble[2][3].frame,
-                 checkBubble[2][4].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-
-                 createComet("left", null, checkBubble[0][0].y);
-                 createComet("right", null, checkBubble[0][0].y);
-                 createComet("up", checkBubble[2][2].x, null);
-                 createComet("down", checkBubble[2][2].x, null);
-
-                 createAsteroid(checkBubble[2][2].x, checkBubble[2][2].y);
-
-                 checkBubble[0][0].matched();
-                 checkBubble[1][2].matched();
-                 checkBubble[2][2].matched();
-                 checkBubble[3][2].matched();
-                 checkBubble[4][2].matched();
-                 checkBubble[2][0].matched();
-                 checkBubble[2][1].matched();
-                 checkBubble[2][3].matched();
-                 checkBubble[2][4].matched();
-
-
-
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //       *
-              //   * * *
-              //       *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[2][1] != null && checkBubble[2][3] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[1][2].frame,
-                 checkBubble[2][2].frame,
-                 checkBubble[2][3].frame,
-                 checkBubble[2][1].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[2][2].x, null);
-                 } else {
-                   createComet("down", checkBubble[2][2].x, null);
-                 }
-                 cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("left", null, checkBubble[0][0].y);
-                 } else {
-                   createComet("right", null, checkBubble[0][0].y);
-                 }
-
-                 checkBubble[0][0].matched();
-                 checkBubble[1][2].matched();
-                 checkBubble[2][2].matched();
-                 checkBubble[2][3].matched();
-                 checkBubble[2][1].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //   *
-              //   * * *
-              //   *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[1][3] != null && checkBubble[2][3] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[0][1].frame,
-                 checkBubble[0][2].frame,
-                 checkBubble[1][3].frame,
-                 checkBubble[2][3].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[0][0].x, null);
-                 } else {
-                   createComet("down", checkBubble[0][0].x, null);
-                 }
-                 cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("left", null, checkBubble[0][1].y);
-                 } else {
-                   createComet("right", null, checkBubble[0][1].y);
-                 }
-
-                 checkBubble[0][0].matched();
-                 checkBubble[0][1].matched();
-                 checkBubble[0][2].matched();
-                 checkBubble[1][3].matched();
-                 checkBubble[2][3].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //     *
-              //     *
-              //   * * *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[1][1] != null && checkBubble[1][0] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[1][2].frame,
-                 checkBubble[2][2].frame,
-                 checkBubble[1][1].frame,
-                 checkBubble[1][0].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[1][2].x, null);
-                 } else {
-                   createComet("down", checkBubble[1][2].x, null);
-                 }
-                 cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("left", null, checkBubble[0][0].y);
-                 } else {
-                   createComet("right", null, checkBubble[0][0].y);
-                 }
-
-                 checkBubble[0][0].matched();
-                 checkBubble[1][2].matched();
-                 checkBubble[2][2].matched();
-                 checkBubble[1][1].matched();
-                 checkBubble[1][0].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //       *
-              //       *
-              //   * * *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[2][1] != null && checkBubble[2][0] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[1][2].frame,
-                 checkBubble[2][2].frame,
-                 checkBubble[2][1].frame,
-                 checkBubble[2][0].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[2][2].x, null);
-                 } else {
-                   createComet("down", checkBubble[2][2].x, null);
-                 }
-                 cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("left", null, checkBubble[0][0].y);
-                 } else {
-                   createComet("right", null, checkBubble[0][0].y);
-                 }
-
-                 checkBubble[0][0].matched();
-                 checkBubble[1][2].matched();
-                 checkBubble[2][2].matched();
-                 checkBubble[2][1].matched();
-                 checkBubble[2][0].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //   *
-              //   *
-              //   * * *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[1][4] != null && checkBubble[2][4] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[0][1].frame,
-                 checkBubble[0][2].frame,
-                 checkBubble[1][4].frame,
-                 checkBubble[2][4].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[0][0].x, null);
-                 } else {
-                   createComet("down", checkBubble[0][0].x, null);
-                 }
-                 cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("left", null, checkBubble[0][2].y);
-                 } else {
-                   createComet("right", null, checkBubble[0][2].y);
-                 }
-
-                 checkBubble[0][0].matched();
-                 checkBubble[0][1].matched();
-                 checkBubble[0][2].matched();
-                 checkBubble[1][4].matched();
-                 checkBubble[2][4].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //   * * *
-              //     *
-              //     *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[1][3] != null && checkBubble[1][4] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[1][2].frame,
-                 checkBubble[2][2].frame,
-                 checkBubble[1][3].frame,
-                 checkBubble[1][4].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[1][4].x, null);
-                 } else {
-                   createComet("down", checkBubble[1][4].x, null);
-                 }
-                 cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("left", null, checkBubble[0][0].y);
-                 } else {
-                   createComet("right", null, checkBubble[0][0].y);
-                 }
-
-                 checkBubble[0][0].matched();
-                 checkBubble[1][2].matched();
-                 checkBubble[2][2].matched();
-                 checkBubble[1][3].matched();
-                 checkBubble[1][4].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //   * * *
-              //       *
-              //       *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[2][3] != null && checkBubble[2][4] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[1][2].frame,
-                 checkBubble[2][2].frame,
-                 checkBubble[2][3].frame,
-                 checkBubble[2][4].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[2][2].x, null);
-                 } else {
-                   createComet("down", checkBubble[2][2].x, null);
-                 }
-                 cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("left", null, checkBubble[0][0].y);
-                 } else {
-                   createComet("right", null, checkBubble[0][0].y);
-                 }
-
-                 checkBubble[0][0].matched();
-                 checkBubble[1][2].matched();
-                 checkBubble[2][2].matched();
-                 checkBubble[2][3].matched();
-                 checkBubble[2][4].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //   * * *
-              //   *
-              //   *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[1][2] != null && checkBubble[2][2] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[0][1].frame,
-                 checkBubble[0][2].frame,
-                 checkBubble[1][2].frame,
-                 checkBubble[2][2].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[0][0].x, null);
-                 } else {
-                   createComet("down", checkBubble[0][0].x, null);
-                 }
-                 cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("left", null, checkBubble[0][0].y);
-                 } else {
-                   createComet("right", null, checkBubble[0][0].y);
-                 }
-
-                 checkBubble[0][0].matched();
-                 checkBubble[0][1].matched();
-                 checkBubble[0][2].matched();
-                 checkBubble[1][2].matched();
-                 checkBubble[2][2].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //   *
-              //   *
-              //   *
-              //   *
-              //   *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[0][3] != null && checkBubble[0][4] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[0][1].frame,
-                 checkBubble[0][2].frame,
-                 checkBubble[0][3].frame,
-                 checkBubble[0][4].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 checkBubble[0][2].spawnWild = true;
-
-                 checkBubble[0][0].matched();
-                 checkBubble[0][1].matched();
-                 checkBubble[0][2].matched();
-                 checkBubble[0][3].matched();
-                 checkBubble[0][4].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //   *
-              //   *
-              //   *
-              //   *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[0][3] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[0][1].frame,
-                 checkBubble[0][2].frame,
-                 checkBubble[0][3].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 var cometDir = Math.random();
-                 if (cometDir > 0.5) {
-                   createComet("up", checkBubble[0][0].x, null);
-                 } else {
-                   createComet("down", checkBubble[0][0].x, null);
-                 }
-                 checkBubble[0][0].matched();
-                 checkBubble[0][1].matched();
-                 checkBubble[0][2].matched();
-                 checkBubble[0][3].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //   *
-              //   *
-              //   *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[0][1].frame,
-                 checkBubble[0][2].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-
-                 checkBubble[0][0].matched();
-                 checkBubble[0][1].matched();
-                 checkBubble[0][2].matched();
-                 return;
-               }
-             }
-
-              /////////////////////////
-              //
-              //   v origin
-              //   * * * * *
-              //
-              /////////////////////////
-
-             if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[3][2] != null && checkBubble[4][2] != null) {
-               var bColor = [
-                 checkBubble[0][0].frame,
-                 checkBubble[1][2].frame,
-                 checkBubble[2][2].frame,
-                 checkBubble[3][2].frame,
-                 checkBubble[4][2].frame
-               ];
-
-               matched = checkBubbleColor(bColor);
-
-               if (matched == true) {
-                 checkBubble[2][2].spawnWild = true;
-
-                 checkBubble[0][0].matched();
-                 checkBubble[1][2].matched();
-                 checkBubble[2][2].matched();
-                 checkBubble[3][2].matched();
-                 checkBubble[4][2].matched();
-                 return;
-               }
-             }
-
-               /////////////////////////
-               //
-               //   v origin
-               //   * * * *
-               //
-               /////////////////////////
-
-              if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[3][2] != null) {
-                var bColor = [
-                  checkBubble[0][0].frame,
-                  checkBubble[1][2].frame,
-                  checkBubble[2][2].frame,
-                  checkBubble[3][2].frame
-                ];
-
-                matched = checkBubbleColor(bColor);
-
-                if (matched == true) {
-                  var cometDir = Math.random();
-                  if (cometDir > 0.5) {
-                    createComet("left", null, checkBubble[0][0].y);
-                  } else {
-                    createComet("right", null, checkBubble[0][0].y);
+                if (checkBubble[0][0] != null && checkBubble[1][2] != null && checkBubble[0][1] != null && checkBubble[1][3] != null && checkBubble[0][1] != checkBubble[0][0]) {
+                  var bColor = [
+                    checkBubble[0][0].frame,
+                    checkBubble[0][1].frame,
+                    checkBubble[1][2].frame,
+                    checkBubble[1][3].frame
+                  ];
+
+                  matched = checkBubbleColor(bColor);
+
+                  if (matched == true) {
+                    createBigBubble(checkBubble[0][0].x + 26, checkBubble[0][0].y + 26, checkBubble[0][0].frame);
+
+                    checkBubble[0][0].destroy();
+                    checkBubble[0][1].destroy();
+                    checkBubble[1][2].destroy();
+                    checkBubble[1][3].destroy();
                   }
-
-                  checkBubble[0][0].matched();
-                  checkBubble[1][2].matched();
-                  checkBubble[2][2].matched();
-                  checkBubble[3][2].matched();
-                  return;
                 }
-              }
 
-               /////////////////////////
-               //
-               //   v origin
-               //   * * *
-               //
-               /////////////////////////
+                /////////////////////////
+                //
+                //   v origin
+                //       *
+                //       *
+                //   * * * * *
+                //       *
+                //       *
+                //
+                /////////////////////////
 
-              if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null) {
-                var bColor = [
-                  checkBubble[0][0].frame,
-                  checkBubble[1][2].frame,
-                  checkBubble[2][2].frame
-                ];
+               if (checkBubble[0][0] != null && checkBubble [1][2] != null &&
+                 checkBubble[2][2] != null && checkBubble[3][2] != null &&
+                 checkBubble[4][2] != null && checkBubble[2][0] != null &&
+                 checkBubble[2][1] != null && checkBubble[2][3] != null && checkBubble[2][4] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[1][2].frame,
+                   checkBubble[2][2].frame,
+                   checkBubble[3][2].frame,
+                   checkBubble[4][2].frame,
+                   checkBubble[2][0].frame,
+                   checkBubble[2][1].frame,
+                   checkBubble[2][3].frame,
+                   checkBubble[2][4].frame
+                 ];
 
-                matched = checkBubbleColor(bColor);
+                 matched = checkBubbleColor(bColor);
 
-                if (matched == true) {
-                  checkBubble[0][0].matched();
-                  checkBubble[1][2].matched();
-                  checkBubble[2][2].matched();
-                  return;
+                 if (matched == true) {
+
+                   createAsteroid(checkBubble[2][2].x, checkBubble[2][2].y);
+
+                   checkBubble[0][0].matched();
+                   checkBubble[1][2].matched();
+                   checkBubble[2][2].matched();
+                   checkBubble[3][2].matched();
+                   checkBubble[4][2].matched();
+                   checkBubble[2][0].matched();
+                   checkBubble[2][1].matched();
+                   checkBubble[2][3].matched();
+                   checkBubble[2][4].matched();
+
+
+
+                   return;
+                 }
+               }
+
+                /////////////////////////
+                //
+                //   v origin
+                //       *
+                //   * * *
+                //       *
+                //
+                /////////////////////////
+
+               if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[2][1] != null && checkBubble[2][3] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[1][2].frame,
+                   checkBubble[2][2].frame,
+                   checkBubble[2][3].frame,
+                   checkBubble[2][1].frame
+                 ];
+
+                 matched = checkBubbleColor(bColor);
+
+                 if (matched == true) {
+                   var cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("up", checkBubble[2][2].x, null);
+                   } else {
+                     createComet("down", checkBubble[2][2].x, null);
+                   }
+                   cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("left", null, checkBubble[0][0].y);
+                   } else {
+                     createComet("right", null, checkBubble[0][0].y);
+                   }
+
+                   checkBubble[0][0].matched();
+                   checkBubble[1][2].matched();
+                   checkBubble[2][2].matched();
+                   checkBubble[2][3].matched();
+                   checkBubble[2][1].matched();
+                   return;
+                 }
+               }
+
+                /////////////////////////
+                //
+                //   v origin
+                //   *
+                //   * * *
+                //   *
+                //
+                /////////////////////////
+
+               if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[1][3] != null && checkBubble[2][3] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[0][1].frame,
+                   checkBubble[0][2].frame,
+                   checkBubble[1][3].frame,
+                   checkBubble[2][3].frame
+                 ];
+
+                 matched = checkBubbleColor(bColor);
+
+                 if (matched == true) {
+                   var cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("up", checkBubble[0][0].x, null);
+                   } else {
+                     createComet("down", checkBubble[0][0].x, null);
+                   }
+                   cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("left", null, checkBubble[0][1].y);
+                   } else {
+                     createComet("right", null, checkBubble[0][1].y);
+                   }
+
+                   checkBubble[0][0].matched();
+                   checkBubble[0][1].matched();
+                   checkBubble[0][2].matched();
+                   checkBubble[1][3].matched();
+                   checkBubble[2][3].matched();
+                   return;
+                 }
+               }
+
+                /////////////////////////
+                //
+                //   v origin
+                //     *
+                //     *
+                //   * * *
+                //
+                /////////////////////////
+
+               if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[1][1] != null && checkBubble[1][0] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[1][2].frame,
+                   checkBubble[2][2].frame,
+                   checkBubble[1][1].frame,
+                   checkBubble[1][0].frame
+                 ];
+
+                 matched = checkBubbleColor(bColor);
+
+                 if (matched == true) {
+                   var cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("up", checkBubble[1][2].x, null);
+                   } else {
+                     createComet("down", checkBubble[1][2].x, null);
+                   }
+                   cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("left", null, checkBubble[0][0].y);
+                   } else {
+                     createComet("right", null, checkBubble[0][0].y);
+                   }
+
+                   checkBubble[0][0].matched();
+                   checkBubble[1][2].matched();
+                   checkBubble[2][2].matched();
+                   checkBubble[1][1].matched();
+                   checkBubble[1][0].matched();
+                   return;
+                 }
+               }
+
+                /////////////////////////
+                //
+                //   v origin
+                //       *
+                //       *
+                //   * * *
+                //
+                /////////////////////////
+
+               if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[2][1] != null && checkBubble[2][0] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[1][2].frame,
+                   checkBubble[2][2].frame,
+                   checkBubble[2][1].frame,
+                   checkBubble[2][0].frame
+                 ];
+
+                 matched = checkBubbleColor(bColor);
+
+                 if (matched == true) {
+                   var cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("up", checkBubble[2][2].x, null);
+                   } else {
+                     createComet("down", checkBubble[2][2].x, null);
+                   }
+                   cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("left", null, checkBubble[0][0].y);
+                   } else {
+                     createComet("right", null, checkBubble[0][0].y);
+                   }
+
+                   checkBubble[0][0].matched();
+                   checkBubble[1][2].matched();
+                   checkBubble[2][2].matched();
+                   checkBubble[2][1].matched();
+                   checkBubble[2][0].matched();
+                   return;
+                 }
+               }
+
+                /////////////////////////
+                //
+                //   v origin
+                //   *
+                //   *
+                //   * * *
+                //
+                /////////////////////////
+
+               if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[1][4] != null && checkBubble[2][4] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[0][1].frame,
+                   checkBubble[0][2].frame,
+                   checkBubble[1][4].frame,
+                   checkBubble[2][4].frame
+                 ];
+
+                 matched = checkBubbleColor(bColor);
+
+                 if (matched == true) {
+                   var cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("up", checkBubble[0][0].x, null);
+                   } else {
+                     createComet("down", checkBubble[0][0].x, null);
+                   }
+                   cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("left", null, checkBubble[0][2].y);
+                   } else {
+                     createComet("right", null, checkBubble[0][2].y);
+                   }
+
+                   checkBubble[0][0].matched();
+                   checkBubble[0][1].matched();
+                   checkBubble[0][2].matched();
+                   checkBubble[1][4].matched();
+                   checkBubble[2][4].matched();
+                   return;
+                 }
+               }
+
+                /////////////////////////
+                //
+                //   v origin
+                //   * * *
+                //     *
+                //     *
+                //
+                /////////////////////////
+
+               if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[1][3] != null && checkBubble[1][4] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[1][2].frame,
+                   checkBubble[2][2].frame,
+                   checkBubble[1][3].frame,
+                   checkBubble[1][4].frame
+                 ];
+
+                 matched = checkBubbleColor(bColor);
+
+                 if (matched == true) {
+                   var cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("up", checkBubble[1][4].x, null);
+                   } else {
+                     createComet("down", checkBubble[1][4].x, null);
+                   }
+                   cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("left", null, checkBubble[0][0].y);
+                   } else {
+                     createComet("right", null, checkBubble[0][0].y);
+                   }
+
+                   checkBubble[0][0].matched();
+                   checkBubble[1][2].matched();
+                   checkBubble[2][2].matched();
+                   checkBubble[1][3].matched();
+                   checkBubble[1][4].matched();
+                   return;
+                 }
+               }
+
+                /////////////////////////
+                //
+                //   v origin
+                //   * * *
+                //       *
+                //       *
+                //
+                /////////////////////////
+
+               if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[2][3] != null && checkBubble[2][4] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[1][2].frame,
+                   checkBubble[2][2].frame,
+                   checkBubble[2][3].frame,
+                   checkBubble[2][4].frame
+                 ];
+
+                 matched = checkBubbleColor(bColor);
+
+                 if (matched == true) {
+                   var cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("up", checkBubble[2][2].x, null);
+                   } else {
+                     createComet("down", checkBubble[2][2].x, null);
+                   }
+                   cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("left", null, checkBubble[0][0].y);
+                   } else {
+                     createComet("right", null, checkBubble[0][0].y);
+                   }
+
+                   checkBubble[0][0].matched();
+                   checkBubble[1][2].matched();
+                   checkBubble[2][2].matched();
+                   checkBubble[2][3].matched();
+                   checkBubble[2][4].matched();
+                   return;
+                 }
+               }
+
+                /////////////////////////
+                //
+                //   v origin
+                //   * * *
+                //   *
+                //   *
+                //
+                /////////////////////////
+
+               if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[1][2] != null && checkBubble[2][2] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[0][1].frame,
+                   checkBubble[0][2].frame,
+                   checkBubble[1][2].frame,
+                   checkBubble[2][2].frame
+                 ];
+
+                 matched = checkBubbleColor(bColor);
+
+                 if (matched == true) {
+                   var cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("up", checkBubble[0][0].x, null);
+                   } else {
+                     createComet("down", checkBubble[0][0].x, null);
+                   }
+                   cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("left", null, checkBubble[0][0].y);
+                   } else {
+                     createComet("right", null, checkBubble[0][0].y);
+                   }
+
+                   checkBubble[0][0].matched();
+                   checkBubble[0][1].matched();
+                   checkBubble[0][2].matched();
+                   checkBubble[1][2].matched();
+                   checkBubble[2][2].matched();
+                   return;
+                 }
+               }
+
+                /////////////////////////
+                //
+                //   v origin
+                //   *
+                //   *
+                //   *
+                //   *
+                //   *
+                //
+                /////////////////////////
+
+               if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[0][3] != null && checkBubble[0][4] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[0][1].frame,
+                   checkBubble[0][2].frame,
+                   checkBubble[0][3].frame,
+                   checkBubble[0][4].frame
+                 ];
+
+                 matched = checkBubbleColor(bColor);
+
+                 if (matched == true) {
+                   checkBubble[0][2].spawnWild = true;
+
+                   checkBubble[0][0].matched();
+                   checkBubble[0][1].matched();
+                   checkBubble[0][2].matched();
+                   checkBubble[0][3].matched();
+                   checkBubble[0][4].matched();
+                   return;
+                 }
+               }
+
+                /////////////////////////
+                //
+                //   v origin
+                //   *
+                //   *
+                //   *
+                //   *
+                //
+                /////////////////////////
+
+               if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null && checkBubble[0][3] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[0][1].frame,
+                   checkBubble[0][2].frame,
+                   checkBubble[0][3].frame
+                 ];
+
+                 matched = checkBubbleColor(bColor);
+
+                 if (matched == true) {
+                   var cometDir = Math.random();
+                   if (cometDir > 0.5) {
+                     createComet("up", checkBubble[0][0].x, null);
+                   } else {
+                     createComet("down", checkBubble[0][0].x, null);
+                   }
+                   checkBubble[0][0].matched();
+                   checkBubble[0][1].matched();
+                   checkBubble[0][2].matched();
+                   checkBubble[0][3].matched();
+                   return;
+                 }
+               }
+
+                /////////////////////////
+                //
+                //   v origin
+                //   *
+                //   *
+                //   *
+                //
+                /////////////////////////
+
+               if (checkBubble[0][0] != null && checkBubble [0][1] != null && checkBubble[0][2] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[0][1].frame,
+                   checkBubble[0][2].frame
+                 ];
+
+                 matched = checkBubbleColor(bColor);
+
+                 if (matched == true) {
+
+                   checkBubble[0][0].matched();
+                   checkBubble[0][1].matched();
+                   checkBubble[0][2].matched();
+                   return;
+                 }
+               }
+
+                /////////////////////////
+                //
+                //   v origin
+                //   * * * * *
+                //
+                /////////////////////////
+
+               if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[3][2] != null && checkBubble[4][2] != null) {
+                 var bColor = [
+                   checkBubble[0][0].frame,
+                   checkBubble[1][2].frame,
+                   checkBubble[2][2].frame,
+                   checkBubble[3][2].frame,
+                   checkBubble[4][2].frame
+                 ];
+
+                 matched = checkBubbleColor(bColor);
+
+                 if (matched == true) {
+                   checkBubble[2][2].spawnWild = true;
+
+                   checkBubble[0][0].matched();
+                   checkBubble[1][2].matched();
+                   checkBubble[2][2].matched();
+                   checkBubble[3][2].matched();
+                   checkBubble[4][2].matched();
+                   return;
+                 }
+               }
+
+                 /////////////////////////
+                 //
+                 //   v origin
+                 //   * * * *
+                 //
+                 /////////////////////////
+
+                if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null && checkBubble[3][2] != null) {
+                  var bColor = [
+                    checkBubble[0][0].frame,
+                    checkBubble[1][2].frame,
+                    checkBubble[2][2].frame,
+                    checkBubble[3][2].frame
+                  ];
+
+                  matched = checkBubbleColor(bColor);
+
+                  if (matched == true) {
+                    var cometDir = Math.random();
+                    if (cometDir > 0.5) {
+                      createComet("left", null, checkBubble[0][0].y);
+                    } else {
+                      createComet("right", null, checkBubble[0][0].y);
+                    }
+
+                    checkBubble[0][0].matched();
+                    checkBubble[1][2].matched();
+                    checkBubble[2][2].matched();
+                    checkBubble[3][2].matched();
+                    return;
+                  }
+                }
+
+                 /////////////////////////
+                 //
+                 //   v origin
+                 //   * * *
+                 //
+                 /////////////////////////
+
+                if (checkBubble[0][0] != null && checkBubble [1][2] != null && checkBubble[2][2] != null) {
+                  var bColor = [
+                    checkBubble[0][0].frame,
+                    checkBubble[1][2].frame,
+                    checkBubble[2][2].frame
+                  ];
+
+                  matched = checkBubbleColor(bColor);
+
+                  if (matched == true) {
+                    checkBubble[0][0].matched();
+                    checkBubble[1][2].matched();
+                    checkBubble[2][2].matched();
+                    return;
+                  }
                 }
               }
             }
@@ -1074,12 +1381,14 @@
         }
 
         function createAsteroid(x, targetY) {
-          asteroid = asteroids.create(x, 10, "ASTEROID");
+          var asteroid = asteroids.create(x, 10, "ASTEROID");
           asteroid.anchor.set(0.5, 0.62);
           asteroid.frame = 0;
-          asteroid.body.velocity.y = 300;
+          asteroid.body.velocity.y = 250;
           asteroid.body.setSize(4, 4);
           asteroid.targetY = targetY;
+          anim = asteroid.animations.add('hit');
+          anim.killOnComplete = true;
         }
 
         function destroyComet(comet) {
@@ -1093,9 +1402,24 @@
         }
 
         function asteroidCollisionHandler(asteroid, bubble) {
-          if (bubble.y == asteroid.targetY) {
-            asteroid.destroy();
+          if (asteroid.y > asteroid.targetY) {
+            asteroid.body.velocity = 0;
+            asteroid.animations.play('hit', 30, false);
+            if (asteroid.animations.currentAnim.frame == 1)
+              asteroidExplode(asteroid);
+          } else if (asteroid.exploding == true && asteroid.animations.currentAnim.frame == 1 && bubble.moving == false) {
+            destroyBubble(bubble);
           }
+        }
+
+        function asteroidExplode(asteroid) {
+          var explosion = asteroids.create(asteroid.x, asteroid.y, "ASTEROID_EXPLOSION");
+          explosion.anchor.set(0.5);
+          explosion.body.setSize(207, 207);
+          explosion.exploding = true;
+          anim = explosion.animations.add('explode');
+          explosion.animations.play('explode', 30, false);
+          anim.killOnComplete = true;
         }
 
     };
